@@ -64,20 +64,43 @@ class RouteOptimizer:
         if not packages:
             return {'stops': [], 'total_distance': 0, 'estimated_duration': 0}
         
-        # Add depot (starting point) - use first package location as depot for simplicity
+        # Add depot (Kadıköy Kargo Merkezi) - central location in Kadıköy
         depot_location = {
             'id': 0,
             'kargo_id': 'DEPOT',
-            'address': 'Depot',
-            'recipient_name': 'Depot',
+            'address': 'Kadıköy Kargo Merkezi, Moda Caddesi No:1, Kadıköy, İstanbul',
+            'recipient_name': 'Kargo Merkezi',
             'delivery_type': 'depot',
-            'latitude': packages[0]['latitude'],
-            'longitude': packages[0]['longitude']
+            'latitude': 40.9877,    # Kadıköy merkez koordinat
+            'longitude': 29.0283    # Kadıköy merkez koordinat
         }
         
         # Create locations list with depot first
         locations = [depot_location] + packages
         
+        # Try OR-Tools optimization first, fallback to simple if fails
+        try:
+            return self.ortools_optimization(locations)
+        except Exception as e:
+            print(f"OR-Tools optimization failed: {str(e)}, using fallback...")
+            return self.fallback_optimization(packages, depot_location)
+    
+    def ortools_optimization(self, locations: List[Dict]) -> Dict[str, Any]:
+        """Use OR-Tools for route optimization"""
+        
+        # Create distance matrix
+        distance_matrix = self.create_distance_matrix(locations)
+        
+        # Create routing model
+        manager = pywrapcp.RoutingIndexManager(
+            len(distance_matrix),
+            1,  # number of vehicles (couriers)
+            0   # depot index
+        )
+        routing = pywrapcp.RoutingModel(manager)
+        
+    def ortools_optimization(self, locations: List[Dict]) -> Dict[str, Any]:
+        """Use OR-Tools for route optimization"""
         # Create distance matrix
         distance_matrix = self.create_distance_matrix(locations)
         
@@ -98,39 +121,21 @@ class RouteOptimizer:
         transit_callback_index = routing.RegisterTransitCallback(distance_callback)
         routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
         
-        # Add delivery priority constraints
-        for i, location in enumerate(locations[1:], 1):  # Skip depot
-            priority = self.get_delivery_priority(location['delivery_type'])
+        # Add delivery priority constraints (make all deliveries mandatory)
+        # for i, location in enumerate(locations[1:], 1):  # Skip depot
+        #     priority = self.get_delivery_priority(location['delivery_type'])
+        #     node_index = manager.NodeToIndex(i)
+        #     
+        #     # Add penalty for not delivering express packages
+        #     if location['delivery_type'] == 'express':
+        #         routing.AddDisjunction([node_index], 10000)  # High penalty
+        #     else:
+        #         routing.AddDisjunction([node_index], 100)    # Lower penalty
+        
+        # Make all deliveries mandatory (no optional drops)
+        for i in range(1, len(locations)):  # Skip depot (index 0)
             node_index = manager.NodeToIndex(i)
-            
-            # Add penalty for not delivering express packages
-            if location['delivery_type'] == 'express':
-                routing.AddDisjunction([node_index], 10000)  # High penalty
-            else:
-                routing.AddDisjunction([node_index], 100)    # Lower penalty
-        
-        # Add time window constraints for scheduled deliveries
-        time_dimension_name = 'Time'
-        horizon = 24 * 60  # 24 hours in minutes
-        capacity = 10 * 60  # 10 minutes per delivery
-        
-        routing.AddDimension(
-            transit_callback_index,
-            horizon,  # allow waiting time
-            horizon,  # maximum time per vehicle
-            False,    # don't force start cumul to zero
-            time_dimension_name
-        )
-        time_dimension = routing.GetDimensionOrDie(time_dimension_name)
-        
-        # Set time windows for scheduled deliveries
-        for i, location in enumerate(locations[1:], 1):  # Skip depot
-            if location['delivery_type'] == 'scheduled':
-                start_time = self.time_to_minutes(location.get('time_window_start', '08:00'))
-                end_time = self.time_to_minutes(location.get('time_window_end', '18:00'))
-                
-                index = manager.NodeToIndex(i)
-                time_dimension.CumulVar(index).SetRange(start_time, end_time)
+            routing.AddDisjunction([node_index], 999999)  # Very high penalty = mandatory
         
         # Set search parameters
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
@@ -140,7 +145,7 @@ class RouteOptimizer:
         search_parameters.local_search_metaheuristic = (
             routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
-        search_parameters.time_limit.FromSeconds(10)  # 10 seconds timeout
+        search_parameters.time_limit.FromSeconds(30)  # 30 seconds for better optimization
         
         # Solve the problem
         solution = routing.SolveWithParameters(search_parameters)
@@ -149,7 +154,9 @@ class RouteOptimizer:
             return self.extract_solution(manager, routing, solution, locations)
         else:
             # Fallback: simple nearest neighbor
-            return self.fallback_optimization(packages)
+            packages = locations[1:]  # Remove depot
+            depot_location = locations[0]  # Get depot
+            return self.fallback_optimization(packages, depot_location)
     
     def extract_solution(self, manager, routing, solution, locations) -> Dict[str, Any]:
         """Extract optimized route from OR-Tools solution"""
@@ -200,7 +207,7 @@ class RouteOptimizer:
             'estimated_duration': estimated_duration
         }
     
-    def fallback_optimization(self, packages: List[Dict]) -> Dict[str, Any]:
+    def fallback_optimization(self, packages: List[Dict], depot_location: Dict) -> Dict[str, Any]:
         """Fallback optimization using simple priority and nearest neighbor"""
         # Sort by priority first
         sorted_packages = sorted(packages, key=lambda x: (
@@ -211,8 +218,16 @@ class RouteOptimizer:
         route_stops = []
         total_distance = 0
         current_time = 8 * 60  # Start at 8 AM
+        current_lat, current_lon = depot_location['latitude'], depot_location['longitude']
         
         for i, package in enumerate(sorted_packages):
+            # Calculate distance from current position
+            distance_to_package = self.calculate_distance(
+                current_lat, current_lon,
+                package['latitude'], package['longitude']
+            )
+            total_distance += distance_to_package
+            
             estimated_arrival = f"{(current_time // 60):02d}:{(current_time % 60):02d}"
             
             route_stops.append({
@@ -228,15 +243,8 @@ class RouteOptimizer:
                 'estimated_arrival': estimated_arrival
             })
             
-            # Calculate distance to next stop
-            if i < len(sorted_packages) - 1:
-                next_package = sorted_packages[i + 1]
-                distance = self.calculate_distance(
-                    package['latitude'], package['longitude'],
-                    next_package['latitude'], next_package['longitude']
-                )
-                total_distance += distance
-            
+            # Update current position
+            current_lat, current_lon = package['latitude'], package['longitude']
             current_time += 15  # 15 minutes per delivery
         
         estimated_duration = len(route_stops) * 15
