@@ -10,9 +10,22 @@ from models.delivery_route import DeliveryRoute
 from models.courier import Courier
 from schemas.route import OptimizedRoute, RouteResponse, RouteStop
 from routers.auth import get_current_user
-from services.route_optimizer import RouteOptimizer
+from services.google_cloud_optimizer import GoogleCloudRouteOptimizer
+import os
 
 router = APIRouter()
+
+# Initialize Google Cloud optimizer (singleton pattern)
+_google_optimizer = None
+
+def get_google_optimizer():
+    """Get singleton Google Cloud optimizer instance"""
+    global _google_optimizer
+    if _google_optimizer is None:
+        google_project_id = os.getenv('GOOGLE_CLOUD_PROJECT_ID')
+        google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        _google_optimizer = GoogleCloudRouteOptimizer(google_project_id, google_credentials_path)
+    return _google_optimizer
 
 @router.get("/test")
 async def test_route():
@@ -20,13 +33,38 @@ async def test_route():
     print("TEST ROUTE CALLED!")
     return {"message": "Routes are working!", "status": "success"}
 
+@router.get("/optimizer/status")
+async def get_optimizer_status():
+    """Get status of Google Cloud route optimizer"""
+    optimizer = get_google_optimizer()
+    
+    if optimizer.is_available():
+        return {
+            "message": "Google Cloud Route Optimizer Status",
+            "status": "Ready",
+            "api_available": True,
+            "project_id": optimizer.project_id or "Not configured"
+        }
+    else:
+        return {
+            "message": "Google Cloud Route Optimizer Status", 
+            "status": "Not configured",
+            "api_available": False,
+            "error": "Google Cloud credentials or project ID not set"
+        }
+
 @router.get("/", response_model=OptimizedRoute)
 async def get_optimized_route(
     route_date: date = None,
     db: Session = Depends(get_db)
 ):
-    """Get optimized delivery route for current day or specified date"""
-    print(f"=== ROUTE OPTIMIZATION REQUEST ===")
+    """
+    Get optimized delivery route using Google Cloud Route Optimization API
+    
+    Args:
+        route_date: Date for route optimization (default: today)
+    """
+    print(f"=== GOOGLE CLOUD ROUTE OPTIMIZATION REQUEST ===")
     print(f"Date: {route_date}")
     
     if not route_date:
@@ -47,9 +85,9 @@ async def get_optimized_route(
             detail="No packages found for route optimization"
         )
     
-    # Initialize route optimizer
-    print("Initializing route optimizer...")
-    optimizer = RouteOptimizer()
+    # Initialize Google Cloud route optimizer
+    print("Initializing Google Cloud route optimizer...")
+    optimizer = get_google_optimizer()
     
     # Convert packages to optimizer format
     package_data = []
@@ -65,7 +103,10 @@ async def get_optimized_route(
                 'time_window_start': pkg.time_window_start,
                 'time_window_end': pkg.time_window_end,
                 'latitude': pkg.latitude,
-                'longitude': pkg.longitude
+                'longitude': pkg.longitude,
+                'weight': getattr(pkg, 'weight', 1),
+                'volume': getattr(pkg, 'volume', 1),
+                'scheduled_hour': getattr(pkg, 'scheduled_hour', 10)
             })
         else:
             print(f"Warning: Package {pkg.kargo_id} has no coordinates")
@@ -78,16 +119,89 @@ async def get_optimized_route(
             detail="No packages with valid coordinates found"
         )
     
+    # Check if Google Cloud API is available
+    if not optimizer.is_available():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google Cloud Route Optimization API is not available. Please configure your credentials."
+        )
+    
     # Optimize route
-    print("Starting route optimization...")
+    print("Starting Google Cloud route optimization...")
     try:
-        optimized_route = optimizer.optimize_route(package_data)
-        print("Route optimization completed successfully")
+        depot_location = {
+            'latitude': 41.0082,
+            'longitude': 28.9784,
+            'address': 'Istanbul Merkez Depo'
+        }
+        
+        optimized_result = optimizer.optimize_route(
+            packages=package_data,
+            depot_location=depot_location
+        )
+        
+        print(f"✅ Google Cloud optimization completed")
+        print(f"   Distance: {optimized_result['total_distance_km']:.1f}km")
+        print(f"   Duration: {optimized_result['total_duration_minutes']:.0f}min")
+        
+        # Convert Google Cloud result to response format
+        optimized_route = {
+            'stops': [],
+            'total_distance': optimized_result['total_distance_km'],
+            'total_distance_km': optimized_result['total_distance_km'],
+            'estimated_duration': int(optimized_result['total_duration_minutes']),
+            'optimization_metadata': optimized_result.get('optimization_metadata', {}),
+            'algorithm_details': {
+                'name': 'Google Cloud Route Optimization',
+                'version': 'Production API',
+                'features': ['Real-time traffic', 'Vehicle constraints', 'Time windows']
+            },
+            'api_used': 'google_cloud'
+        }
+        
+        # Convert optimized stops to response format
+        # Add depot as starting point
+        depot_stop = {
+            'id': 0,
+            'kargo_id': 'DEPOT-START',
+            'address': depot_location['address'],
+            'recipient_name': 'Başlangıç Noktası',
+            'delivery_type': 'depot',
+            'latitude': depot_location['latitude'],
+            'longitude': depot_location['longitude'],
+            'sequence': 0,
+            'arrival_time': '08:00',
+            'departure_time': '08:00',
+            'distance_from_previous': 0,
+            'duration_from_previous': 0
+        }
+        optimized_route['stops'].append(depot_stop)
+        
+        for stop_data in optimized_result['optimized_stops']:
+            # Google Cloud format
+            package = stop_data['package']
+            stop = {
+                'id': package['id'],
+                'kargo_id': package['kargo_id'],
+                'address': package['address'],
+                'recipient_name': package['recipient_name'],
+                'delivery_type': package['delivery_type'],
+                'latitude': package['latitude'],
+                'longitude': package['longitude'],
+                'sequence': stop_data.get('sequence', len(optimized_route['stops'])),
+                'arrival_time': stop_data.get('arrival_time'),
+                'departure_time': stop_data.get('departure_time'),
+                'distance_from_previous': stop_data.get('distance_from_previous_m', 0) / 1000,
+                'duration_from_previous': stop_data.get('duration_from_previous_s', 0) / 60
+            }
+            optimized_route['stops'].append(stop)
+        
+        print("Google Cloud route optimization completed successfully")
     except Exception as e:
-        print(f"Route optimization failed: {str(e)}")
+        print(f"Google Cloud route optimization failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Route optimization failed: {str(e)}"
+            detail=f"Google Cloud route optimization failed: {str(e)}"
         )
     
     # Save route to database
@@ -127,7 +241,7 @@ async def get_optimized_route(
     return OptimizedRoute(
         stops=stops,
         total_distance=optimized_route['total_distance'],
-        estimated_duration=optimized_route['estimated_duration'],
+        estimated_duration=int(optimized_route['estimated_duration']),
         route_date=datetime.combine(route_date, datetime.min.time())
     )
 

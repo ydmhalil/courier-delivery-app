@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "kargo-rota-opt",
+  "private_key_id": "75dc00bc6881daab4d83f5a69b7caf3a112a513e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCWV7lkfclWlfRi\nIAuCroa4Lq2KmuDhDZIKDUcF9dML7lGyqBFXydMS/ILTDcCZE3MHQQvX2JIZPZsz\nuwIfQyPU9sr1p163kUk+mFGR7nZdrRmWB/PmXgz3sqPxzm07pPKgt4rNGTZaAGFa\nXUFFGlmWtg2xpLbjP1STrfWBK9+JJchVRyVAA26nMI4mbPZE8O7CKfQTna8pCa5x\nNBX+mQOyBapzhuA46m352/SqK3JrtpGR/LpVUwaD7cbvCDta1qlX5+al+iaujarA\n2plYAHAgfNiM9Z7DE/BO+xwtVg1DHH8UsZqC7SDzkxVR6le27IG1GlPcns1aoobf\nGVgMDRuzAgMBAAECggEAJ8I4RZKcUbkjYWXPFXa5KvExNMQDr5Cqq9zaCQH7F58l\nXOVkfL5jgxRjNpRe+Dx0AZmam7Dq5iDsL/CHPaRAUBwaDX//JPWXlKWsgLa698gE\nya/9uNDrhf/oqlRof8r93THc06OUw5VxKXgbAD7ZLWmk0nNYaF2BrPJmyAvFuFtt\nJ+YYnvXvAK/7SyWWYaR2XzdcUypqTHfJYnw7gqE8J2kAElmTcj2B1+0A6ueuVux6\nMMy0pfuWMdlGcIGceJmfrsKXFQ5C1gUF+caTksXEX7T5bZfubo5BZJKTXENkTDwt\nlqWwpwDeB6wdEIV1B48ZSrkX5xQLTl9JmByPGawZyQKBgQDO3UAXWlJaM1/P061L\nUTDS0EXsknqqoJfnJIaaVgc1enoADcP6zA+9ZfEVx7VqJxaI2d6dMr8swlGgp8u2\n9Dci2m/9e6e50Bko+2o82NulmvIlffczJ7ibOuS4GEiNpMEJK7sLNeOsH3AzgR8W\nWb9hI+70JBOnYUNKwo34OuduqwKBgQC6DZP/NPNz90h36LI382QOr3pST4w1XAyw\ne2VdXZjF7ayvnSKElzIHOWlkZi9/hqGRi1s04juExgMZAotIZDMHmnO5wZ04Ae3i\nz5m24aFdpYIOeVh6PM5gG37X9iQgX+geOcywAgua4pCxKn8l56LDlmotbmFTmE3q\noyX958XnGQKBgQCDQGJf7tD9pkcOaDI17Yfa2objOXVXOZnn8Ibu+dKNHe62hgVo\n5Xy/ISU8OoBin/ZuUj4q433k+k4sbwqURJOPK6WO4ZxkCyNLm2mmvblvc8Zb/3aP\nII7C/zULkWzHYleQaAy/aivQlAnuw+hjmAITsmb0xMcrlkzJ7HODomwhDQKBgHWO\nWMG68kyGpXpmRB1IIyOISrCxZHTeqYHlJeH9XqdJCoCXt5Sxd8HKy8XNLxvTtEij\nFcjvXQ4Ckzh9PAZMkVWviImJRU57IZTa+VPtcqkaB3gfwgDSZM+i792Cv8bY8nAO\nsz9Ou4hsuWHH6TjJCDWu133HLaXFKQ4lcb7hcFEZAoGBAL0huzEJCGWpz5lN51Y4\nKEBqqjh+ctA2l/p/brp44QirHSf6J0wIKxODvVWtX1X2+gqgPMm9JV+1s1W3puWK\nxYl8xZjQ1lZkx+VZlQWYnOl1vX5gK7Mt4YuKVGPRpSj3Kt+Ef21l2/sh7cm79THs\n2jbWevPtuXS8bZSfXW2Qw5OV\n-----END PRIVATE KEY-----\n",
+  "client_email": "kargo-rota-opt@kargo-rota-opt.iam.gserviceaccount.com",
+  "client_id": "105045106359259226374",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/kargo-rota-opt%40kargo-rota-opt.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

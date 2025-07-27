@@ -11,3 +11,9 @@ pydantic==2.5.0
 python-dotenv==1.0.0
 httpx==0.25.2
 geopy==2.4.0
+
+# Google Cloud Route Optimization
+google-cloud-optimization==1.6.0
+google-auth==2.23.4
+grpcio==1.59.0
+protobuf==4.25.0
