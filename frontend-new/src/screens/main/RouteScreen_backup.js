@@ -93,6 +93,7 @@ const RouteScreen = () => {
     console.log('=== STOP PRESS DEBUG ===');
     console.log('📍 Stop pressed:', stop.kargo_id);
     console.log('📍 Coordinates:', stop.latitude, stop.longitude);
+    console.log('📍 Stop type:', stop.type);
     console.log('========================');
     
     try {
@@ -104,7 +105,7 @@ const RouteScreen = () => {
       }
       
       // Calculate zoom level based on stop type
-      const zoomLevel = stop.type === 'depot' ? 0.01 : 0.003;
+      const zoomLevel = stop.type === 'depot' ? 0.01 : 0.003; // Smaller zoom for better view
       
       const newRegion = {
         latitude: parseFloat(stop.latitude),
@@ -118,13 +119,15 @@ const RouteScreen = () => {
       // Animate map to the selected stop
       if (mapRef.current) {
         console.log('✅ MapRef found, starting animation');
-        mapRef.current.animateToRegion(newRegion, 1000);
-        // Update state AFTER animation starts
-        setTimeout(() => setMapRegion(newRegion), 100);
+        mapRef.current.animateToRegion(newRegion, 500); // Even faster
       } else {
         console.error('❌ MapRef is null!');
+        // Fallback: just update region
         setMapRegion(newRegion);
       }
+      
+      // Always update map region state
+      setMapRegion(newRegion);
       
     } catch (error) {
       console.error('❌ Error in handleStopPress:', error);
@@ -160,110 +163,23 @@ const RouteScreen = () => {
     </View>
   );
 
-  // Modern ve bilgilendirici durak kartı
-  const ModernStopCard = ({ stop, index }) => {
-    const isDepot = stop.kargo_id === 'DEPOT';
-    
-    const getDeliveryTypeColor = (type) => {
-      switch (type?.toLowerCase()) {
-        case 'express': return '#EF4444';
-        case 'scheduled': return '#F59E0B';
-        case 'standard': return '#10B981';
-        default: return '#6B7280';
-      }
-    };
-    
-    const getDeliveryTypeIcon = (type) => {
-      switch (type?.toLowerCase()) {
-        case 'express': return 'flash';
-        case 'scheduled': return 'time';
-        case 'standard': return 'cube';
-        default: return 'package';
-      }
-    };
+  // TEST: En basit tıklanabilir item
+  const SimpleStopItem = ({ stop, index }) => {
+    console.log('🎨 SimpleStopItem rendered for:', stop.kargo_id);
     
     return (
       <TouchableOpacity 
         onPress={() => {
-          console.log('🔥 Modern card touched:', stop.kargo_id);
+          console.log('🔥🔥🔥 TOUCHED!', stop.kargo_id);
+          Alert.alert('Tıklandı!', `${stop.kargo_id} tıklandı!`);
           handleStopPress(stop);
         }}
-        style={[
-          styles.modernStopCard,
-          isDepot && styles.depotCard
-        ]}
-        activeOpacity={0.7}
+        style={styles.simpleStopItem}
+        activeOpacity={0.5}
       >
-        {/* Sıra numarası ve durum */}
-        <View style={styles.cardHeader}>
-          <View style={[
-            styles.sequenceBadge,
-            { backgroundColor: isDepot ? '#2563EB' : getDeliveryTypeColor(stop.delivery_type) }
-          ]}>
-            <Text style={styles.sequenceText}>
-              {isDepot ? '🏢' : stop.sequence}
-            </Text>
-          </View>
-          
-          <View style={styles.cardTitleSection}>
-            <Text style={styles.cardTitle}>
-              {isDepot ? 'DEPOT - Merkez' : `Teslimat #${stop.sequence}`}
-            </Text>
-            <Text style={styles.cardSubtitle}>
-              {isDepot ? 'Başlangıç Noktası' : stop.kargo_id}
-            </Text>
-          </View>
-          
-          {!isDepot && (
-            <View style={[
-              styles.deliveryTypeBadge,
-              { backgroundColor: getDeliveryTypeColor(stop.delivery_type) }
-            ]}>
-              <Ionicons 
-                name={getDeliveryTypeIcon(stop.delivery_type)} 
-                size={12} 
-                color="white" 
-              />
-              <Text style={styles.deliveryTypeText}>
-                {stop.delivery_type?.toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Alıcı bilgileri */}
-        {!isDepot && (
-          <View style={styles.cardBody}>
-            <View style={styles.infoRow}>
-              <Ionicons name="person-outline" size={16} color="#6B7280" />
-              <Text style={styles.infoText}>
-                {stop.recipient_name || 'Alıcı bilgisi yok'}
-              </Text>
-            </View>
-            
-            <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={16} color="#6B7280" />
-              <Text style={styles.infoText} numberOfLines={2}>
-                {stop.address || `${stop.latitude?.toFixed(4)}, ${stop.longitude?.toFixed(4)}`}
-              </Text>
-            </View>
-            
-            {stop.phone && (
-              <View style={styles.infoRow}>
-                <Ionicons name="call-outline" size={16} color="#6B7280" />
-                <Text style={styles.infoText}>{stop.phone}</Text>
-              </View>
-            )}
-          </View>
-        )}
-        
-        {/* Tıklama işareti */}
-        <View style={styles.cardFooter}>
-          <View style={styles.tapIndicator}>
-            <Ionicons name="location" size={16} color="#3B82F6" />
-            <Text style={styles.tapText}>Haritada göster</Text>
-          </View>
-        </View>
+        <Text style={styles.simpleStopText}>
+          {index}. {stop.kargo_id} - TIKLA BENİ!
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -314,6 +230,7 @@ const RouteScreen = () => {
           ref={mapRef}
           style={styles.map}
           region={mapRegion}
+          onRegionChangeComplete={setMapRegion}
         >
           {/* Depot Marker */}
           <Marker
@@ -363,16 +280,16 @@ const RouteScreen = () => {
       {/* Route Stats */}
       <RouteStats />
 
-      {/* Modern Stops List */}
+      {/* Simple Stops List - TEST VERSION */}
       <ScrollView style={styles.stopsContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.stopsHeader}>
-          <Text style={styles.stopsTitle}>📦 Teslimat Rotası ({route.stops.length})</Text>
-          <Text style={styles.stopsSubtitle}>Haritada görmek için kartlara tıklayın</Text>
+          <Text style={styles.stopsTitle}>TEST: Simple Clicks ({route.stops.length})</Text>
+          <Text style={styles.stopsSubtitle}>Her birine tıkla - alert çıkmalı! 🔥</Text>
         </View>
         {route.stops
           .sort((a, b) => a.sequence - b.sequence)
           .map((stop, index) => (
-          <ModernStopCard 
+          <SimpleStopItem 
             key={stop.package_id || stop.id || `stop-${index}`} 
             stop={stop} 
             index={index + 1}
@@ -454,103 +371,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontStyle: 'italic',
   },
-  // MODERN CARD STYLES
-  modernStopCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    marginBottom: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    borderLeftWidth: 4,
-    borderLeftColor: '#E5E7EB',
-  },
-  depotCard: {
-    borderLeftColor: '#2563EB',
-    backgroundColor: '#F8FAFC',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sequenceBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  sequenceText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cardTitleSection: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  deliveryTypeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  deliveryTypeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  cardBody: {
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#4B5563',
-    lineHeight: 20,
-  },
-  cardFooter: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
-  },
-  tapIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  tapText: {
-    fontSize: 12,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-  // OLD TEST STYLES (can be removed later)
+  // TEST STYLES
   simpleStopItem: {
     backgroundColor: '#EF4444',
     padding: 20,

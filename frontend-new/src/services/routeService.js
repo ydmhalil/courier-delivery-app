@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.1.108:8000';
+// For development - replace with your computer's IP address
+// Run 'ipconfig' in terminal to find your IPv4 Address
+const API_BASE_URL = 'http://192.168.1.108:8000'; // Update this with your actual IP
 
 class RouteService {
   constructor() {

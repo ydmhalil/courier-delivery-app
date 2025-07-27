@@ -23,24 +23,21 @@ async def test_route():
 @router.get("/", response_model=OptimizedRoute)
 async def get_optimized_route(
     route_date: date = None,
-    current_user: Courier = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get optimized delivery route for current day or specified date"""
     print(f"=== ROUTE OPTIMIZATION REQUEST ===")
-    print(f"User: {current_user.id} ({current_user.email})")
     print(f"Date: {route_date}")
     
     if not route_date:
         route_date = date.today()
     
-    # Get packages that need delivery for the courier
+    # Get all packages that need delivery (for testing without authentication)
     packages = db.query(Package).filter(
-        Package.courier_id == current_user.id,
         Package.status.in_([PackageStatus.PENDING, PackageStatus.IN_TRANSIT])
     ).all()
     
-    print(f"Found {len(packages)} packages for courier {current_user.id}")
+    print(f"Found {len(packages)} packages")
     for pkg in packages:
         print(f"Package {pkg.kargo_id}: {pkg.address} (status: {pkg.status})")
     
@@ -97,7 +94,7 @@ async def get_optimized_route(
     print("Saving route to database...")
     route_data_json = json.dumps(optimized_route)
     db_route = DeliveryRoute(
-        courier_id=current_user.id,
+        courier_id=1,  # Default courier ID for testing
         route_data=route_data_json,
         total_distance=optimized_route['total_distance'],
         estimated_duration=optimized_route['estimated_duration'],
