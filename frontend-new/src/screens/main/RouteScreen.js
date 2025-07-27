@@ -178,7 +178,8 @@ const RouteScreen = () => {
         case 'express': return 'flash';
         case 'scheduled': return 'time';
         case 'standard': return 'cube';
-        default: return 'package';
+        case 'depot': return 'business';
+        default: return 'cube-outline';
       }
     };
     
@@ -339,7 +340,7 @@ const RouteScreen = () => {
             .filter(stop => stop.kargo_id !== 'DEPOT') // Don't show depot in numbered markers
             .map((stop, index) => (
             <Marker
-              key={stop.package_id || stop.id}
+              key={`marker-${stop.id || stop.kargo_id}-${index}`}
               coordinate={{
                 latitude: stop.latitude,
                 longitude: stop.longitude,
@@ -373,7 +374,7 @@ const RouteScreen = () => {
           .sort((a, b) => a.sequence - b.sequence)
           .map((stop, index) => (
           <ModernStopCard 
-            key={stop.package_id || stop.id || `stop-${index}`} 
+            key={`card-${stop.id || stop.kargo_id}-${index}`} 
             stop={stop} 
             index={index + 1}
           />
