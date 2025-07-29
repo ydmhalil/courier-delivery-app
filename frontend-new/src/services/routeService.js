@@ -24,11 +24,20 @@ class RouteService {
     }
   }
 
-  async getOptimizedRoute(date = null) {
+  async getOptimizedRoute(date = null, startingLocation = null) {
     console.log('🗺️ RouteService: Getting optimized route...');
     console.log('🗺️ RouteService: Date parameter:', date);
+    console.log('🗺️ RouteService: Starting location:', startingLocation);
     console.log('🗺️ RouteService: Auth header:', this.api.defaults.headers.common['Authorization']);
-    const params = date ? { route_date: date } : {};
+    
+    const params = {};
+    if (date) params.route_date = date;
+    if (startingLocation) {
+      params.start_lat = startingLocation.latitude;
+      params.start_lng = startingLocation.longitude;
+      params.start_address = startingLocation.name || startingLocation.address || 'Selected Location';
+    }
+    
     const response = await this.api.get('/api/routes', { params });
     console.log('🗺️ RouteService: Route response:', response.data);
     return response.data;

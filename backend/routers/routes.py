@@ -56,6 +56,9 @@ async def get_optimizer_status():
 @router.get("/", response_model=OptimizedRoute)
 async def get_optimized_route(
     route_date: date = None,
+    start_lat: float = 41.0082,
+    start_lng: float = 28.9784,
+    start_address: str = "Istanbul Merkez Depo",
     db: Session = Depends(get_db)
 ):
     """
@@ -63,9 +66,13 @@ async def get_optimized_route(
     
     Args:
         route_date: Date for route optimization (default: today)
+        start_lat: Starting location latitude (default: Istanbul depot)
+        start_lng: Starting location longitude (default: Istanbul depot)
+        start_address: Starting location address (default: Istanbul Merkez Depo)
     """
     print(f"=== GOOGLE CLOUD ROUTE OPTIMIZATION REQUEST ===")
     print(f"Date: {route_date}")
+    print(f"Starting location: {start_address} ({start_lat}, {start_lng})")
     
     if not route_date:
         route_date = date.today()
@@ -130,9 +137,9 @@ async def get_optimized_route(
     print("Starting Google Cloud route optimization...")
     try:
         depot_location = {
-            'latitude': 41.0082,
-            'longitude': 28.9784,
-            'address': 'Istanbul Merkez Depo'
+            'latitude': start_lat,
+            'longitude': start_lng,
+            'address': start_address
         }
         
         optimized_result = optimizer.optimize_route(

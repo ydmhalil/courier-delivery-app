@@ -165,7 +165,7 @@ const DashboardScreen = ({ navigation }) => {
             title="View Packages"
             icon="list-outline"
             color="#F59E0B"
-            onPress={() => navigation.navigate('Packages')}
+            onPress={() => navigation.navigate('Packages', { screen: 'PackageList' })}
           />
         </View>
       </View>
@@ -174,7 +174,7 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Packages</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Packages')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Packages', { screen: 'PackageList' })}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>

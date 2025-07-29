@@ -16,7 +16,7 @@ const Stack = createStackNavigator();
 
 const PackageStack = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName="PackageList">
       <Stack.Screen 
         name="PackageList" 
         component={PackageListScreen}

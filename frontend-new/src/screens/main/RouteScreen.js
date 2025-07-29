@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,14 @@ import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { routeService } from '../../services/routeService';
+import LocationSelectorModal from '../../components/LocationSelectorModal';
 
 const RouteScreen = () => {
   const { user, authLoading } = useAuth();
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [startingLocation, setStartingLocation] = useState(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const mapRef = useRef(null);
   const [mapRegion, setMapRegion] = useState({
     latitude: 41.0082,
@@ -70,6 +73,62 @@ const RouteScreen = () => {
       setLoading(false);
     }
   };
+
+  const loadOptimizedRouteWithLocation = useCallback(async (startLocation) => {
+    try {
+      console.log('🗺️ RouteScreen: Loading optimized route with custom start location...');
+      console.log('🗺️ RouteScreen: Custom start location:', startLocation);
+      
+      setLoading(true);
+      const routeData = await routeService.getOptimizedRoute(null, startLocation);
+      console.log('🗺️ RouteScreen: Route data received with custom start:', routeData);
+      setRoute(routeData);
+      
+      if (routeData.stops && routeData.stops.length > 0) {
+        // Calculate map region to fit all stops
+        const latitudes = routeData.stops.map(stop => stop.latitude);
+        const longitudes = routeData.stops.map(stop => stop.longitude);
+        
+        const minLat = Math.min(...latitudes);
+        const maxLat = Math.max(...latitudes);
+        const minLng = Math.min(...longitudes);
+        const maxLng = Math.max(...longitudes);
+        
+        setMapRegion({
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: (maxLat - minLat) * 1.3,
+          longitudeDelta: (maxLng - minLng) * 1.3,
+        });
+      }
+    } catch (error) {
+      console.error('🗺️ RouteScreen: Error loading route with custom start:', error);
+      Alert.alert('Error', `Error loading route with custom start: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLocationSelected = useCallback((location) => {
+    console.log('📍 Starting location selected:', location);
+    setStartingLocation(location);
+    setShowLocationSelector(false);
+    
+    // Update map region to show selected location
+    setMapRegion({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+    
+    // Reload route with new starting location
+    loadOptimizedRouteWithLocation(location);
+  }, [loadOptimizedRouteWithLocation]);
+
+  const handleCloseLocationSelector = useCallback(() => {
+    setShowLocationSelector(false);
+  }, []);
 
   const getMarkerColor = (deliveryType) => {
     switch (deliveryType) {
@@ -301,12 +360,37 @@ const RouteScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>📍 Route Overview</Text>
-        <TouchableOpacity
-          style={styles.refreshIcon}
-          onPress={loadOptimizedRoute}
-        >
-          <Ionicons name="refresh" size={24} color="#3B82F6" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[
+              styles.locationButton,
+              startingLocation && styles.locationButtonSelected
+            ]}
+            onPress={() => setShowLocationSelector(true)}
+          >
+            <Ionicons 
+              name={startingLocation ? "checkmark-circle" : "location"} 
+              size={20} 
+              color={startingLocation ? "#10B981" : "#007AFF"} 
+            />
+            <View style={styles.locationButtonTextContainer}>
+              <Text style={styles.locationButtonText}>
+                {startingLocation ? 'Başlangıç Konumu' : 'Konum Seç'}
+              </Text>
+              {startingLocation && (
+                <Text style={styles.locationButtonSubtext} numberOfLines={1}>
+                  {startingLocation.address || startingLocation.name}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.refreshIcon}
+            onPress={loadOptimizedRoute}
+          >
+            <Ionicons name="refresh" size={24} color="#3B82F6" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Map */}
@@ -380,6 +464,13 @@ const RouteScreen = () => {
           />
         ))}
       </ScrollView>
+
+      {/* Location Selector Modal */}
+      <LocationSelectorModal
+        visible={showLocationSelector}
+        onLocationSelected={handleLocationSelected}
+        onClose={handleCloseLocationSelector}
+      />
     </View>
   );
 };
@@ -402,6 +493,40 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1F2937',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F8FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    gap: 8,
+    maxWidth: 200,
+  },
+  locationButtonSelected: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#10B981',
+  },
+  locationButtonTextContainer: {
+    flex: 1,
+  },
+  locationButtonText: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  locationButtonSubtext: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 2,
   },
   refreshIcon: {
     padding: 8,
