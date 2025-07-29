@@ -130,22 +130,73 @@ const RouteScreen = () => {
     setShowLocationSelector(false);
   }, []);
 
-  const getMarkerColor = (deliveryType) => {
-    switch (deliveryType) {
-      case 'EXPRESS':
-      case 'express':
-        return '#EF4444'; // Red for express
-      case 'SCHEDULED':
-      case 'scheduled':
-        return '#F59E0B'; // Orange for scheduled
-      case 'STANDARD':
-      case 'standard':
-        return '#10B981'; // Green for standard
-      case 'depot':
-        return '#2563EB'; // Blue for depot
-      default:
-        return '#6B7280'; // Gray for unknown
+  const handleRefreshRoute = useCallback(async () => {
+    try {
+      Alert.alert(
+        '🔄 Rotayı Yenile',
+        'Güncel teslimat durumlarına göre rota yeniden hesaplanacak. Devam etmek istiyor musunuz?',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { 
+            text: 'Yenile', 
+            onPress: async () => {
+              try {
+                if (startingLocation) {
+                  await loadOptimizedRouteWithLocation(startingLocation);
+                } else {
+                  await loadOptimizedRoute();
+                }
+                Alert.alert('✅ Başarılı', 'Rota başarıyla güncellendi! Güncel teslimat durumları yansıtıldı.');
+              } catch (error) {
+                console.error('🔄 Error refreshing route:', error);
+                Alert.alert('❌ Hata', 'Rota yenilenirken bir hata oluştu. Lütfen tekrar deneyin.');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('🔄 Error in refresh handler:', error);
+      Alert.alert('❌ Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
     }
+  }, [startingLocation, loadOptimizedRoute, loadOptimizedRouteWithLocation]);
+
+  const getMarkerColor = (deliveryType, status) => {
+    // Teslimat durumu her zaman öncelikli (tek renk)
+    if (status === 'delivered') {
+      return '#10B981'; // Yeşil - her teslim başarılı aynı renk
+    } else if (status === 'failed') {
+      return '#374151'; // Koyu gri - her başarısız aynı renk
+    } else if (status === 'in_transit') {
+      return '#8B5CF6'; // Mor - her yolda olan aynı renk
+    }
+    
+    // Beklemede olanlar için sadece kargo tipine göre renk
+    switch (deliveryType?.toLowerCase()) {
+      case 'express':
+        return '#EF4444'; // Kırmızı - ekspres (acil)
+      case 'scheduled':
+        return '#F97316'; // Turuncu - zamanlanmış
+      case 'standard':
+        return '#10B981'; // Yeşil - standart
+      case 'depot':
+        return '#6B7280'; // Gri - depo
+      default:
+        return '#9CA3AF'; // Açık gri - bilinmeyen
+    }
+  };
+
+  const getMarkerIcon = (deliveryType, status) => {
+    if (status === 'delivered') {
+      return 'checkmark-circle';
+    } else if (status === 'failed') {
+      return 'close-circle';
+    } else if (status === 'in_transit') {
+      return 'car';
+    } else if (deliveryType === 'depot') {
+      return 'business';
+    }
+    return 'location';
   };
 
   const handleStopPress = (stop) => {
@@ -225,10 +276,10 @@ const RouteScreen = () => {
     
     const getDeliveryTypeColor = (type) => {
       switch (type?.toLowerCase()) {
-        case 'express': return '#EF4444';
-        case 'scheduled': return '#F59E0B';
-        case 'standard': return '#10B981';
-        default: return '#6B7280';
+        case 'express': return '#EF4444'; // Kırmızı - Express
+        case 'scheduled': return '#F97316'; // Turuncu - Zamanlanmış 
+        case 'standard': return '#10B981'; // Yeşil - Standart
+        default: return '#6B7280'; // Gri - Bilinmeyen
       }
     };
     
@@ -241,6 +292,31 @@ const RouteScreen = () => {
         default: return 'cube-outline';
       }
     };
+
+    const getStatusColor = (status) => {
+      // Tek renk sistemi - tüm durumlar için mavi
+      return '#3B82F6'; // Mavi - Tüm teslimat durumları
+    };
+
+    const getStatusText = (status) => {
+      switch (status) {
+        case 'delivered': return 'TESLİM EDİLDİ';
+        case 'failed': return 'BAŞARISIZ';
+        case 'in_transit': return 'YOLDA';
+        case 'pending': return 'BEKLİYOR';
+        default: return 'BEKLİYOR';
+      }
+    };
+
+    const getStatusIcon = (status) => {
+      switch (status) {
+        case 'delivered': return 'checkmark-circle';
+        case 'failed': return 'close-circle';
+        case 'in_transit': return 'car';
+        case 'pending': return 'time';
+        default: return 'ellipse-outline';
+      }
+    };
     
     return (
       <TouchableOpacity 
@@ -250,7 +326,9 @@ const RouteScreen = () => {
         }}
         style={[
           styles.modernStopCard,
-          isDepot && styles.depotCard
+          isDepot && styles.depotCard,
+          stop.status === 'delivered' && styles.deliveredCard,
+          stop.status === 'failed' && styles.failedCard
         ]}
         activeOpacity={0.7}
       >
@@ -258,7 +336,7 @@ const RouteScreen = () => {
         <View style={styles.cardHeader}>
           <View style={[
             styles.sequenceBadge,
-            { backgroundColor: isDepot ? '#2563EB' : getDeliveryTypeColor(stop.delivery_type) }
+            { backgroundColor: isDepot ? '#2563EB' : getMarkerColor(stop.delivery_type, stop.status) }
           ]}>
             <Text style={styles.sequenceText}>
               {isDepot ? '🏢' : stop.sequence}
@@ -273,6 +351,23 @@ const RouteScreen = () => {
               {isDepot ? 'Başlangıç Noktası' : stop.kargo_id}
             </Text>
           </View>
+
+          {/* Teslimat Durumu Badge */}
+          {!isDepot && (
+            <View style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(stop.status || 'pending') }
+            ]}>
+              <Ionicons 
+                name={getStatusIcon(stop.status || 'pending')} 
+                size={12} 
+                color="white" 
+              />
+              <Text style={styles.statusText}>
+                {getStatusText(stop.status || 'pending')}
+              </Text>
+            </View>
+          )}
           
           {!isDepot && (
             <View style={[
@@ -317,13 +412,47 @@ const RouteScreen = () => {
           </View>
         )}
         
-        {/* Tıklama işareti */}
-        <View style={styles.cardFooter}>
-          <View style={styles.tapIndicator}>
-            <Ionicons name="location" size={16} color="#3B82F6" />
-            <Text style={styles.tapText}>Haritada göster</Text>
+        {/* Aksiyon Butonları */}
+        {!isDepot && (
+          <View style={styles.cardActions}>
+            {/* Harita Butonu */}
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleStopPress(stop)}
+            >
+              <Ionicons name="location" size={16} color="#3B82F6" />
+              <Text style={styles.actionText}>Haritada Göster</Text>
+            </TouchableOpacity>
+            
+            {/* Müşteriyi Ara Butonu */}
+            {stop.phone && (
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.callButton]}
+                onPress={() => {
+                  // Telefon arama fonksiyonu
+                  const { Linking } = require('react-native');
+                  const phoneNumber = stop.phone.replace(/[^0-9+]/g, '');
+                  Linking.openURL(`tel:${phoneNumber}`).catch(() => {
+                    Alert.alert('Hata', 'Telefon uygulaması açılamadı');
+                  });
+                }}
+              >
+                <Ionicons name="call" size={16} color="white" />
+                <Text style={[styles.actionText, { color: 'white' }]}>Müşteriyi Ara</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
+        )}
+
+        {/* Depot için farklı footer */}
+        {isDepot && (
+          <View style={styles.cardFooter}>
+            <View style={styles.tapIndicator}>
+              <Ionicons name="business" size={16} color="#2563EB" />
+              <Text style={styles.tapText}>Başlangıç noktası</Text>
+            </View>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -357,42 +486,6 @@ const RouteScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>📍 Route Overview</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[
-              styles.locationButton,
-              startingLocation && styles.locationButtonSelected
-            ]}
-            onPress={() => setShowLocationSelector(true)}
-          >
-            <Ionicons 
-              name={startingLocation ? "checkmark-circle" : "location"} 
-              size={20} 
-              color={startingLocation ? "#10B981" : "#007AFF"} 
-            />
-            <View style={styles.locationButtonTextContainer}>
-              <Text style={styles.locationButtonText}>
-                {startingLocation ? 'Başlangıç Konumu' : 'Konum Seç'}
-              </Text>
-              {startingLocation && (
-                <Text style={styles.locationButtonSubtext} numberOfLines={1}>
-                  {startingLocation.address || startingLocation.name}
-                </Text>
-              )}
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.refreshIcon}
-            onPress={loadOptimizedRoute}
-          >
-            <Ionicons name="refresh" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* Map */}
       <View style={styles.mapContainer}>
         <MapView
@@ -430,15 +523,15 @@ const RouteScreen = () => {
                 longitude: stop.longitude,
               }}
               title={`${stop.sequence}. ${stop.kargo_id}`}
-              description={`${stop.recipient_name} - ${stop.delivery_type.toUpperCase()}`}
+              description={`${stop.recipient_name} - ${stop.delivery_type?.toUpperCase()} - Durum: ${stop.status || 'pending'}`}
             >
               <View
                 style={[
                   styles.markerContainer,
-                  { backgroundColor: getMarkerColor(stop.delivery_type) },
+                  { backgroundColor: getMarkerColor(stop.delivery_type, stop.status) },
                 ]}
               >
-                <Text style={styles.markerText}>{stop.sequence}</Text>
+                <Text style={styles.markerSequence}>{stop.sequence}</Text>
               </View>
             </Marker>
           ))}
@@ -447,6 +540,53 @@ const RouteScreen = () => {
 
       {/* Route Stats */}
       <RouteStats />
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity
+          style={[
+            styles.modernButton,
+            styles.locationButton,
+            startingLocation && styles.locationButtonSelected
+          ]}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <Ionicons 
+            name={startingLocation ? "checkmark-circle" : "location"} 
+            size={20} 
+            color={startingLocation ? "#10B981" : "#3B82F6"} 
+          />
+          <Text style={[
+            styles.modernButtonText,
+            startingLocation && styles.locationButtonTextSelected
+          ]}>
+            {startingLocation ? 'Konum Seçildi' : 'Konum Seç'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.modernButton,
+            styles.refreshButton,
+            loading && styles.refreshButtonLoading
+          ]}
+          onPress={handleRefreshRoute}
+          disabled={loading}
+        >
+          <Ionicons 
+            name="refresh" 
+            size={20} 
+            color="white"
+          />
+          <Text style={[
+            styles.modernButtonText,
+            styles.refreshButtonText,
+            loading && styles.refreshButtonTextLoading
+          ]}>
+            {loading ? 'Yenileniyor...' : 'Rotayı Yenile'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Modern Stops List */}
       <ScrollView style={styles.stopsContainer} showsVerticalScrollIndicator={false}>
@@ -480,24 +620,53 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  headerActions: {
+  modernButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modernButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
+  },
+  locationButton: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+  },
+  locationButtonSelected: {
+    backgroundColor: '#EBF8FF',
+    borderColor: '#10B981',
+  },
+  locationButtonTextSelected: {
+    color: '#10B981',
+  },
+  refreshButton: {
+    backgroundColor: '#3B82F6',
+  },
+  refreshButtonLoading: {
+    backgroundColor: '#9CA3AF',
+  },
+  refreshButtonText: {
+    color: 'white',
+  },
+  refreshButtonTextLoading: {
+    color: '#E5E7EB',
   },
   locationButton: {
     flexDirection: 'row',
@@ -518,26 +687,26 @@ const styles = StyleSheet.create({
   locationButtonTextContainer: {
     flex: 1,
   },
-  locationButtonText: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
   locationButtonSubtext: {
     fontSize: 10,
     color: '#666',
     marginTop: 2,
   },
-  refreshIcon: {
-    padding: 8,
-  },
   mapContainer: {
-    height: 300,
-    margin: 16,
+    height: 350,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
   },
   map: {
     flex: 1,
     borderRadius: 12,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -762,6 +931,64 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Marker stilleri
+  markerSequence: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  // Teslimat durumu stilleri
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  // Kart durumu stilleri
+  deliveredCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    backgroundColor: '#F0FDF4',
+  },
+  failedCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  // Aksiyon butonları
+  cardActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 8,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#F3F4F6',
+    gap: 4,
+  },
+  callButton: {
+    backgroundColor: '#3B82F6',
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
   },
 });
 

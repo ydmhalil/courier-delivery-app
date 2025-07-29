@@ -1,17 +1,48 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import json
+from datetime import datetime
 from geopy.geocoders import Nominatim
 
 from database import get_db
-from models.package import Package, DeliveryType, PackageStatus
+from models.package import Package, DeliveryType, PackageStatus, DeliveryFailureReason
 from models.courier import Courier
-from schemas.package import PackageCreate, PackageUpdate, PackageResponse, QRCodeData
+from schemas.package import PackageCreate, PackageUpdate, PackageResponse, QRCodeData, DeliveryUpdateRequest
 from routers.auth import get_current_user
 
 router = APIRouter()
 geolocator = Nominatim(user_agent="courier_app")
+
+@router.get("/delivery-stats", response_model=dict)
+async def get_delivery_stats(
+    current_user: Courier = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Kurye teslimat istatistikleri"""
+    total_packages = db.query(Package).filter(Package.courier_id == current_user.id).count()
+    delivered_packages = db.query(Package).filter(
+        Package.courier_id == current_user.id,
+        Package.status == PackageStatus.DELIVERED
+    ).count()
+    failed_packages = db.query(Package).filter(
+        Package.courier_id == current_user.id,
+        Package.status == PackageStatus.FAILED
+    ).count()
+    pending_packages = db.query(Package).filter(
+        Package.courier_id == current_user.id,
+        Package.status.in_([PackageStatus.PENDING, PackageStatus.IN_TRANSIT])
+    ).count()
+    
+    success_rate = (delivered_packages / total_packages * 100) if total_packages > 0 else 0
+    
+    return {
+        "total_packages": total_packages,
+        "delivered_packages": delivered_packages,
+        "failed_packages": failed_packages,
+        "pending_packages": pending_packages,
+        "success_rate": round(success_rate, 1)
+    }
 
 def translate_delivery_type(turkish_type: str) -> DeliveryType:
     """Translate Turkish delivery type to enum"""
@@ -194,6 +225,45 @@ async def update_package(
     
     for field, value in update_data.items():
         setattr(package, field, value)
+    
+    db.commit()
+    db.refresh(package)
+    
+    return package
+
+@router.patch("/{package_id}/delivery-status", response_model=PackageResponse)
+async def update_delivery_status(
+    package_id: int,
+    delivery_update: DeliveryUpdateRequest,
+    current_user: Courier = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Teslimat durumu güncelleme - Kurye geri bildirimi"""
+    package = db.query(Package).filter(
+        Package.id == package_id,
+        Package.courier_id == current_user.id
+    ).first()
+    
+    if not package:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paket bulunamadı"
+        )
+    
+    # Durum güncelleme
+    package.status = delivery_update.status
+    package.delivery_notes = delivery_update.notes
+    package.updated_at = datetime.now()
+    
+    # Başarılı teslimat
+    if delivery_update.status == PackageStatus.DELIVERED:
+        package.delivered_at = datetime.now()
+        package.customer_signature = delivery_update.customer_signature
+        package.delivery_photo = delivery_update.delivery_photo
+    
+    # Başarısız teslimat
+    elif delivery_update.status == PackageStatus.FAILED:
+        package.failure_reason = delivery_update.failure_reason
     
     db.commit()
     db.refresh(package)

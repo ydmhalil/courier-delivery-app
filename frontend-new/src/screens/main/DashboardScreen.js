@@ -26,6 +26,13 @@ const DashboardScreen = ({ navigation }) => {
     standard: 0,
     delivered: 0,
   });
+  const [deliveryStats, setDeliveryStats] = useState({
+    total_packages: 0,
+    delivered_packages: 0,
+    failed_packages: 0,
+    pending_packages: 0,
+    success_rate: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,6 +90,22 @@ const DashboardScreen = ({ navigation }) => {
         delivered: packagesData?.filter(p => p.status === 'delivered').length || 0,
       };
       setStats(newStats);
+
+      // Load delivery statistics
+      try {
+        const deliveryStatsData = await packageService.getDeliveryStats();
+        setDeliveryStats(deliveryStatsData);
+      } catch (statsError) {
+        console.warn('📊 Dashboard: Failed to load delivery stats:', statsError);
+        // Set default values if delivery stats fail
+        setDeliveryStats({
+          total_packages: newStats.total,
+          delivered_packages: newStats.delivered,
+          failed_packages: packagesData?.filter(p => p.status === 'failed').length || 0,
+          pending_packages: packagesData?.filter(p => p.status === 'pending' || p.status === 'in_transit').length || 0,
+          success_rate: newStats.total > 0 ? (newStats.delivered / newStats.total * 100) : 0,
+        });
+      }
       
     } catch (error) {
       const errorInfo = errorService.handleError(error, 'Dashboard Data Loading', { 
@@ -128,11 +151,60 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
-  const StatCard = ({ title, value, color, icon }) => (
+  const getStatusColor = (status) => {
+    // Tek renk sistemi - tüm durumlar için mavi
+    return '#3B82F6'; // Mavi - Tüm teslimat durumları
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'Beklemede';
+      case 'in_transit':
+        return 'Yolda';
+      case 'delivered':
+        return 'Teslim Edildi';
+      case 'failed':
+        return 'Başarısız';
+      default:
+        return status;
+    }
+  };
+
+  const getDeliveryTypeText = (type) => {
+    switch (type) {
+      case 'express':
+        return 'Ekspres';
+      case 'scheduled':
+        return 'Programlı';
+      case 'standard':
+        return 'Standart';
+      default:
+        return type;
+    }
+  };
+
+  const StatCard = ({ title, value, color, icon, subtitle }) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
       <View style={styles.statHeader}>
         <Ionicons name={icon} size={24} color={color} />
         <Text style={styles.statValue}>{value}</Text>
+      </View>
+      <Text style={styles.statTitle}>{title}</Text>
+      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+    </View>
+  );
+
+  const DeliveryStatCard = ({ title, value, color, icon, percentage }) => (
+    <View style={[styles.deliveryStatCard, { borderLeftColor: color }]}>
+      <View style={styles.statHeader}>
+        <Ionicons name={icon} size={20} color={color} />
+        <View style={styles.statValues}>
+          <Text style={styles.statValue}>{value}</Text>
+          {percentage !== undefined && (
+            <Text style={[styles.statPercentage, { color }]}>%{percentage}</Text>
+          )}
+        </View>
       </View>
       <Text style={styles.statTitle}>{title}</Text>
     </View>
@@ -208,10 +280,10 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* Statistics */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Today's Overview</Text>
+        <Text style={styles.sectionTitle}>Bugünün Özeti</Text>
         <View style={styles.statsGrid}>
           <StatCard
-            title="Total Packages"
+            title="Toplam Paket"
             value={stats.total}
             color="#3B82F6"
             icon="cube-outline"
@@ -237,24 +309,70 @@ const DashboardScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Teslimat İstatistikleri */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Teslimat Performansı</Text>
+        <View style={styles.deliveryStatsGrid}>
+          <DeliveryStatCard
+            title="Başarılı Teslimat"
+            value={deliveryStats.delivered_packages}
+            color="#10B981"
+            icon="checkmark-circle"
+            percentage={deliveryStats.success_rate}
+          />
+          <DeliveryStatCard
+            title="Başarısız Teslimat"
+            value={deliveryStats.failed_packages}
+            color="#EF4444"
+            icon="close-circle"
+          />
+          <DeliveryStatCard
+            title="Bekleyen Teslimat"
+            value={deliveryStats.pending_packages}
+            color="#F59E0B"
+            icon="time"
+          />
+        </View>
+        
+        {/* Başarı Oranı Çubuğu */}
+        <View style={styles.successRateContainer}>
+          <View style={styles.successRateHeader}>
+            <Text style={styles.successRateTitle}>Genel Başarı Oranı</Text>
+            <Text style={styles.successRateValue}>%{deliveryStats.success_rate}</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { 
+                  width: `${deliveryStats.success_rate}%`,
+                  backgroundColor: deliveryStats.success_rate >= 80 ? '#10B981' : 
+                                   deliveryStats.success_rate >= 60 ? '#F59E0B' : '#EF4444'
+                }
+              ]} 
+            />
+          </View>
+        </View>
+      </View>
+
       {/* Quick Actions */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>Hızlı İşlemler</Text>
         <View style={styles.quickActions}>
           <QuickAction
-            title="Scan QR Code"
+            title="QR Kod Tara"
             icon="qr-code-outline"
             color="#8B5CF6"
             onPress={() => navigation.navigate('Packages', { screen: 'QRScanner' })}
           />
           <QuickAction
-            title="View Route"
+            title="Rota Görüntüle"
             icon="map-outline"
             color="#06B6D4"
             onPress={() => navigation.navigate('Routes')}
           />
           <QuickAction
-            title="Add Package"
+            title="Paket Ekle"
             icon="add-outline"
             color="#10B981"
             onPress={() => navigation.navigate('Packages', { screen: 'AddPackage' })}
@@ -288,13 +406,23 @@ const DashboardScreen = ({ navigation }) => {
           >
             <View style={styles.packageHeader}>
               <Text style={styles.packageId}>{pkg.kargo_id}</Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getDeliveryTypeColor(pkg.delivery_type) },
-                ]}
-              >
-                <Text style={styles.statusText}>{pkg.delivery_type}</Text>
+              <View style={styles.badges}>
+                <View
+                  style={[
+                    styles.typeBadge,
+                    { backgroundColor: getDeliveryTypeColor(pkg.delivery_type) },
+                  ]}
+                >
+                  <Text style={styles.badgeText}>{getDeliveryTypeText(pkg.delivery_type)}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: getStatusColor(pkg.status) },
+                  ]}
+                >
+                  <Text style={styles.badgeText}>{getStatusText(pkg.status)}</Text>
+                </View>
               </View>
             </View>
             <Text style={styles.packageRecipient}>{pkg.recipient_name}</Text>
@@ -449,10 +577,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
   },
+  badges: {
+    gap: 6,
+    alignItems: 'flex-end',
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
   statusText: {
     color: 'white',
@@ -532,6 +675,82 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: '#92400E',
+  },
+  // Teslimat İstatistikleri
+  deliveryStatsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  deliveryStatCard: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 16,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statValues: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  statPercentage: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  statSubtitle: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  // Başarı Oranı
+  successRateContainer: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  successRateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  successRateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  successRateValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
   },
 });
 

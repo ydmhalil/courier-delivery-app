@@ -61,15 +61,35 @@ const PackageListScreen = ({ navigation }) => {
   };
 
   const getStatusColor = (status) => {
+    // Tek renk sistemi - tüm durumlar için mavi
+    return '#3B82F6'; // Mavi - Tüm teslimat durumları
+  };
+
+  const getStatusText = (status) => {
     switch (status) {
-      case 'delivered':
-        return '#10B981';
+      case 'pending':
+        return 'Beklemede';
       case 'in_transit':
-        return '#3B82F6';
+        return 'Yolda';
+      case 'delivered':
+        return 'Teslim Edildi';
       case 'failed':
-        return '#EF4444';
+        return 'Başarısız';
       default:
-        return '#6B7280';
+        return status;
+    }
+  };
+
+  const getDeliveryTypeText = (type) => {
+    switch (type) {
+      case 'express':
+        return 'Ekspres';
+      case 'scheduled':
+        return 'Programlı';
+      case 'standard':
+        return 'Standart';
+      default:
+        return type;
     }
   };
 
@@ -95,7 +115,7 @@ const PackageListScreen = ({ navigation }) => {
               { backgroundColor: getDeliveryTypeColor(item.delivery_type) },
             ]}
           >
-            <Text style={styles.badgeText}>{item.delivery_type}</Text>
+            <Text style={styles.badgeText}>{getDeliveryTypeText(item.delivery_type)}</Text>
           </View>
           <View
             style={[
@@ -103,7 +123,7 @@ const PackageListScreen = ({ navigation }) => {
               { backgroundColor: getStatusColor(item.status) },
             ]}
           >
-            <Text style={styles.badgeText}>{item.status}</Text>
+            <Text style={styles.badgeText}>{getStatusText(item.status)}</Text>
           </View>
         </View>
       </View>

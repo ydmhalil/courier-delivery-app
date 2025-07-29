@@ -113,6 +113,16 @@ class PackageService {
     return response.data;
   }
 
+  async updateDeliveryStatus(id, deliveryUpdate) {
+    const response = await this.api.patch(`/api/packages/${id}/delivery-status`, deliveryUpdate);
+    return response.data;
+  }
+
+  async getDeliveryStats() {
+    const response = await this.api.get('/api/packages/delivery-stats');
+    return response.data;
+  }
+
   // Enhanced QR code processing with validation
   processQRData(qrCodeText) {
     try {

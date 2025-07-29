@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-from models.package import DeliveryType, PackageStatus
+from models.package import DeliveryType, PackageStatus, DeliveryFailureReason
 
 class PackageBase(BaseModel):
     kargo_id: str
@@ -36,9 +36,21 @@ class PackageResponse(PackageBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     delivered_at: Optional[datetime] = None
+    delivery_notes: Optional[str] = None
+    failure_reason: Optional[DeliveryFailureReason] = None
+    customer_signature: Optional[str] = None
+    delivery_photo: Optional[str] = None
     
     class Config:
         from_attributes = True
+
+class DeliveryUpdateRequest(BaseModel):
+    """Teslimat durumu güncelleme request'i"""
+    status: PackageStatus
+    notes: Optional[str] = None
+    failure_reason: Optional[DeliveryFailureReason] = None
+    customer_signature: Optional[str] = None  # Base64 encoded signature
+    delivery_photo: Optional[str] = None  # Photo URL or base64
 
 class QRCodeData(BaseModel):
     """Schema for QR code data structure"""

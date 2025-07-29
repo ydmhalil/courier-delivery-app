@@ -15,6 +15,14 @@ class PackageStatus(enum.Enum):
     DELIVERED = "delivered"
     FAILED = "failed"
 
+class DeliveryFailureReason(enum.Enum):
+    CUSTOMER_NOT_FOUND = "customer_not_found"
+    CUSTOMER_REFUSED = "customer_refused"
+    WRONG_ADDRESS = "wrong_address"
+    CUSTOMER_NOT_AVAILABLE = "customer_not_available"
+    DAMAGED_PACKAGE = "damaged_package"
+    OTHER = "other"
+
 class Package(Base):
     __tablename__ = "packages"
 
@@ -41,6 +49,12 @@ class Package(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
     delivered_at = Column(DateTime)
+    
+    # Delivery feedback
+    delivery_notes = Column(String)  # Kurye notları
+    failure_reason = Column(Enum(DeliveryFailureReason))  # Başarısız teslimat nedeni
+    customer_signature = Column(String)  # Müşteri imzası (base64)
+    delivery_photo = Column(String)  # Teslimat fotoğrafı URL'si
     
     # Relationships
     courier = relationship("Courier", back_populates="packages")

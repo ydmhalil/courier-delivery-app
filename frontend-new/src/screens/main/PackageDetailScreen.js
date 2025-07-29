@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { packageService } from '../../services/packageService';
@@ -14,6 +17,18 @@ const PackageDetailScreen = ({ route, navigation }) => {
   const { packageId } = route.params;
   const [packageData, setPackageData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [selectedFailureReason, setSelectedFailureReason] = useState('');
+  
+  const failureReasons = [
+    { value: 'customer_not_found', label: 'Müşteri Bulunamadı' },
+    { value: 'customer_refused', label: 'Müşteri Teslim Almayı Reddetti' },
+    { value: 'wrong_address', label: 'Yanlış Adres' },
+    { value: 'customer_not_available', label: 'Müşteri Mevcut Değil' },
+    { value: 'damaged_package', label: 'Hasar Görmüş Paket' },
+    { value: 'other', label: 'Diğer' },
+  ];
 
   useEffect(() => {
     loadPackageDetails();
@@ -60,9 +75,89 @@ const PackageDetailScreen = ({ route, navigation }) => {
     try {
       await packageService.updatePackage(packageId, { status: newStatus });
       setPackageData(prev => ({ ...prev, status: newStatus }));
-      Alert.alert('Success', `Package status updated to ${newStatus}`);
+      Alert.alert('Başarılı', 'Paket durumu güncellendi');
     } catch (error) {
-      Alert.alert('Error', 'Failed to update package status');
+      Alert.alert('Hata', 'Paket durumu güncellenemedi');
+    }
+  };
+
+  const handleDeliverySuccess = async () => {
+    try {
+      const updateData = {
+        status: 'delivered',
+        notes: deliveryNotes,
+      };
+      
+      await packageService.updateDeliveryStatus(packageId, updateData);
+      setPackageData(prev => ({ 
+        ...prev, 
+        status: 'delivered',
+        delivery_notes: deliveryNotes,
+        delivered_at: new Date().toISOString()
+      }));
+      
+      setShowDeliveryModal(false);
+      setDeliveryNotes('');
+      Alert.alert('Başarılı', 'Paket başarıyla teslim edildi!');
+    } catch (error) {
+      Alert.alert('Hata', 'Teslimat durumu güncellenemedi');
+    }
+  };
+
+  const handleDeliveryFailure = async () => {
+    if (!selectedFailureReason) {
+      Alert.alert('Uyarı', 'Lütfen başarısızlık nedenini seçin');
+      return;
+    }
+
+    try {
+      const updateData = {
+        status: 'failed',
+        notes: deliveryNotes,
+        failure_reason: selectedFailureReason,
+      };
+      
+      await packageService.updateDeliveryStatus(packageId, updateData);
+      setPackageData(prev => ({ 
+        ...prev, 
+        status: 'failed',
+        delivery_notes: deliveryNotes,
+        failure_reason: selectedFailureReason
+      }));
+      
+      setShowDeliveryModal(false);
+      setDeliveryNotes('');
+      setSelectedFailureReason('');
+      Alert.alert('Bilgi', 'Teslimat başarısız olarak işaretlendi');
+    } catch (error) {
+      Alert.alert('Hata', 'Teslimat durumu güncellenemedi');
+    }
+  };
+
+  const handleCallCustomer = () => {
+    if (packageData?.phone) {
+      const phoneNumber = packageData.phone.replace(/[^0-9+]/g, '');
+      const url = Platform.OS === 'ios' ? `tel:${phoneNumber}` : `tel:${phoneNumber}`;
+      
+      Alert.alert(
+        'Müşteriyi Ara',
+        `${packageData.recipient_name} isimli müşteriyi aramak istiyor musunuz?\n\nTelefon: ${packageData.phone}`,
+        [
+          { text: 'İptal', style: 'cancel' },
+          { 
+            text: 'Ara', 
+            onPress: () => {
+              // React Native'de gerçek telefon çağrısı için Linking kullanılır
+              const { Linking } = require('react-native');
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Hata', 'Telefon uygulaması açılamadı');
+              });
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert('Hata', 'Telefon numarası bulunamadı');
     }
   };
 
@@ -80,15 +175,35 @@ const PackageDetailScreen = ({ route, navigation }) => {
   };
 
   const getStatusColor = (status) => {
+    // Tek renk sistemi - tüm durumlar için mavi
+    return '#3B82F6'; // Mavi - Tüm teslimat durumları
+  };
+
+  const getStatusText = (status) => {
     switch (status) {
-      case 'delivered':
-        return '#10B981';
+      case 'pending':
+        return 'Beklemede';
       case 'in_transit':
-        return '#3B82F6';
+        return 'Yolda';
+      case 'delivered':
+        return 'Teslim Edildi';
       case 'failed':
-        return '#EF4444';
+        return 'Başarısız';
       default:
-        return '#6B7280';
+        return status;
+    }
+  };
+
+  const getDeliveryTypeText = (type) => {
+    switch (type) {
+      case 'express':
+        return 'Ekspres';
+      case 'scheduled':
+        return 'Programlı';
+      case 'standard':
+        return 'Standart';
+      default:
+        return type;
     }
   };
 
@@ -121,7 +236,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
                 { backgroundColor: getDeliveryTypeColor(packageData.delivery_type) },
               ]}
             >
-              <Text style={styles.badgeText}>{packageData.delivery_type}</Text>
+              <Text style={styles.badgeText}>{getDeliveryTypeText(packageData.delivery_type)}</Text>
             </View>
             <View
               style={[
@@ -129,7 +244,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
                 { backgroundColor: getStatusColor(packageData.status) },
               ]}
             >
-              <Text style={styles.badgeText}>{packageData.status}</Text>
+              <Text style={styles.badgeText}>{getStatusText(packageData.status)}</Text>
             </View>
           </View>
         </View>
@@ -202,56 +317,91 @@ const PackageDetailScreen = ({ route, navigation }) => {
         )}
       </View>
 
-      {/* Status Actions */}
-      {packageData.status !== 'delivered' && (
+      {/* Teslimat Durumu & Actions */}
+      {packageData.status !== 'delivered' && packageData.status !== 'failed' && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Update Status</Text>
+          <Text style={styles.sectionTitle}>Teslimat İşlemleri</Text>
           
-          <View style={styles.statusActions}>
+          <View style={styles.deliveryActions}>
+            {/* Müşteriyi Ara */}
+            <TouchableOpacity 
+              style={[styles.deliveryButton, { backgroundColor: '#3B82F6' }]}
+              onPress={handleCallCustomer}
+            >
+              <Ionicons name="call" size={20} color="white" />
+              <Text style={styles.deliveryButtonText}>Müşteriyi Ara</Text>
+            </TouchableOpacity>
+            
+            {/* Transit Durumuna Geç */}
             {packageData.status === 'pending' && (
               <TouchableOpacity
-                style={[styles.statusButton, { backgroundColor: '#3B82F6' }]}
+                style={[styles.deliveryButton, { backgroundColor: '#F59E0B' }]}
                 onPress={() => handleUpdateStatus('in_transit')}
               >
                 <Ionicons name="car-outline" size={20} color="white" />
-                <Text style={styles.statusButtonText}>Mark In Transit</Text>
+                <Text style={styles.deliveryButtonText}>Yola Çık</Text>
               </TouchableOpacity>
             )}
             
+            {/* Teslimat Geri Bildirimi */}
             {(packageData.status === 'pending' || packageData.status === 'in_transit') && (
               <TouchableOpacity
-                style={[styles.statusButton, { backgroundColor: '#10B981' }]}
-                onPress={() => handleUpdateStatus('delivered')}
+                style={[styles.deliveryButton, { backgroundColor: '#10B981' }]}
+                onPress={() => setShowDeliveryModal(true)}
               >
-                <Ionicons name="checkmark-circle-outline" size={20} color="white" />
-                <Text style={styles.statusButtonText}>Mark Delivered</Text>
+                <Ionicons name="clipboard-outline" size={20} color="white" />
+                <Text style={styles.deliveryButtonText}>Teslimat Geri Bildirimi</Text>
               </TouchableOpacity>
             )}
-            
-            <TouchableOpacity
-              style={[styles.statusButton, { backgroundColor: '#EF4444' }]}
-              onPress={() => handleUpdateStatus('failed')}
-            >
-              <Ionicons name="close-circle-outline" size={20} color="white" />
-              <Text style={styles.statusButtonText}>Mark Failed</Text>
-            </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* Teslimat Detayları */}
+      {(packageData.delivery_notes || packageData.failure_reason) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Teslimat Detayları</Text>
+          
+          {packageData.delivery_notes && (
+            <View style={styles.infoRow}>
+              <Ionicons name="document-text-outline" size={20} color="#6B7280" />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Kurye Notları</Text>
+                <Text style={styles.infoValue}>{packageData.delivery_notes}</Text>
+              </View>
+            </View>
+          )}
+          
+          {packageData.failure_reason && (
+            <View style={styles.infoRow}>
+              <Ionicons name="warning-outline" size={20} color="#EF4444" />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Başarısızlık Nedeni</Text>
+                <Text style={[styles.infoValue, { color: '#EF4444' }]}>
+                  {failureReasons.find(r => r.value === packageData.failure_reason)?.label || packageData.failure_reason}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       )}
 
       {/* Actions */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Actions</Text>
+        <Text style={styles.sectionTitle}>Diğer İşlemler</Text>
         
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={handleCallCustomer}
+        >
           <Ionicons name="call-outline" size={20} color="#3B82F6" />
-          <Text style={styles.actionButtonText}>Call Recipient</Text>
+          <Text style={styles.actionButtonText}>Müşteriyi Ara</Text>
           <Ionicons name="chevron-forward" size={20} color="#6B7280" />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.actionButton}>
           <Ionicons name="navigate-outline" size={20} color="#3B82F6" />
-          <Text style={styles.actionButtonText}>Get Directions</Text>
+          <Text style={styles.actionButtonText}>Yol Tarifi Al</Text>
           <Ionicons name="chevron-forward" size={20} color="#6B7280" />
         </TouchableOpacity>
         
@@ -261,11 +411,98 @@ const PackageDetailScreen = ({ route, navigation }) => {
         >
           <Ionicons name="trash-outline" size={20} color="#EF4444" />
           <Text style={[styles.actionButtonText, { color: '#EF4444' }]}>
-            Delete Package
+            Paketi Sil
           </Text>
           <Ionicons name="chevron-forward" size={20} color="#EF4444" />
         </TouchableOpacity>
       </View>
+
+      {/* Teslimat Geri Bildirimi Modal */}
+      <Modal
+        visible={showDeliveryModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDeliveryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Teslimat Geri Bildirimi</Text>
+              <TouchableOpacity
+                onPress={() => setShowDeliveryModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalSubtitle}>
+                {packageData?.kargo_id} - {packageData?.recipient_name}
+              </Text>
+
+              {/* Notlar */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalLabel}>Teslimat Notları</Text>
+                <TextInput
+                  style={styles.modalTextInput}
+                  value={deliveryNotes}
+                  onChangeText={setDeliveryNotes}
+                  placeholder="Teslimat hakkında notlarınızı yazın..."
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              {/* Başarısızlık Nedeni Seçimi */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalLabel}>Başarısızlık Durumunda Neden</Text>
+                {failureReasons.map((reason) => (
+                  <TouchableOpacity
+                    key={reason.value}
+                    style={[
+                      styles.reasonOption,
+                      selectedFailureReason === reason.value && styles.reasonOptionSelected
+                    ]}
+                    onPress={() => setSelectedFailureReason(reason.value)}
+                  >
+                    <Ionicons 
+                      name={selectedFailureReason === reason.value ? "radio-button-on" : "radio-button-off"} 
+                      size={20} 
+                      color={selectedFailureReason === reason.value ? "#3B82F6" : "#6B7280"} 
+                    />
+                    <Text style={[
+                      styles.reasonText,
+                      selectedFailureReason === reason.value && styles.reasonTextSelected
+                    ]}>
+                      {reason.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Modal Butonları */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSuccess]}
+                onPress={handleDeliverySuccess}
+              >
+                <Ionicons name="checkmark-circle" size={20} color="white" />
+                <Text style={styles.modalButtonText}>Başarılı Teslimat</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonFailure]}
+                onPress={handleDeliveryFailure}
+              >
+                <Ionicons name="close-circle" size={20} color="white" />
+                <Text style={styles.modalButtonText}>Başarısız Teslimat</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.bottomSpacing} />
     </ScrollView>
@@ -408,6 +645,134 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 40,
+  },
+  // Teslimat butonları
+  deliveryActions: {
+    padding: 20,
+    gap: 12,
+  },
+  deliveryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    gap: 8,
+  },
+  deliveryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Modal stilleri
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalBody: {
+    maxHeight: 400,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  modalSection: {
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  modalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 10,
+  },
+  modalTextInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1F2937',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  reasonOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  reasonOptionSelected: {
+    backgroundColor: '#EBF4FF',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+  },
+  reasonText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 12,
+  },
+  reasonTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    gap: 8,
+  },
+  modalButtonSuccess: {
+    backgroundColor: '#10B981',
+  },
+  modalButtonFailure: {
+    backgroundColor: '#EF4444',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
