@@ -1,0 +1,218 @@
+[
+  {
+    "kargo_id": "PKG001",
+    "alici": "Müşteri 1",
+    "adres": "Oruçreis, 568. Sk. 26a, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0001",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06043243306862,
+      "longitude": 28.856131601130567
+    }
+  },
+  {
+    "kargo_id": "PKG002",
+    "alici": "Müşteri 2",
+    "adres": "Oruçreis, 578. Sk. No:10, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0002",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.05999523142794,
+      "longitude": 28.855342482009025
+    }
+  },
+  {
+    "kargo_id": "PKG003",
+    "alici": "Müşteri 3",
+    "adres": "100. Yıl, 27. Sk. No:19, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0003",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "09:00-12:00",
+    "koordinatlar": {
+      "latitude": 41.06014759327788,
+      "longitude": 28.853334734473318
+    }
+  },
+  {
+    "kargo_id": "PKG004",
+    "alici": "Müşteri 4",
+    "adres": "100. Yıl, 2160. Sk. No:18, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0004",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06138879820188,
+      "longitude": 28.853504366598226
+    }
+  },
+  {
+    "kargo_id": "PKG005",
+    "alici": "Müşteri 5",
+    "adres": "Oruçreis, 561/1. Sk. No:3, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0005",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06160721728245,
+      "longitude": 28.855151242875646
+    }
+  },
+  {
+    "kargo_id": "PKG006",
+    "alici": "Müşteri 6",
+    "adres": "Oruçreis, 557. Sk. No:23, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0006",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "14:00-17:00",
+    "koordinatlar": {
+      "latitude": 41.061520327721425,
+      "longitude": 28.85889345704581
+    }
+  },
+  {
+    "kargo_id": "PKG007",
+    "alici": "Müşteri 7",
+    "adres": "Turgut Reis, 505. Sk. No:4, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0007",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06183159675496,
+      "longitude": 28.860816369306953
+    }
+  },
+  {
+    "kargo_id": "PKG008",
+    "alici": "Müşteri 8",
+    "adres": "Oruçreis, 536. Sk. 12a, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0008",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06405157503987,
+      "longitude": 28.859988478709745
+    }
+  },
+  {
+    "kargo_id": "PKG009",
+    "alici": "Müşteri 9",
+    "adres": "Oruçreis, Giyimkent Vadi Cad 104/A, 34325 Sanayi - Esenler/Esenler/İstanbul",
+    "telefon": "+90-555-0009",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "10:00-13:00",
+    "koordinatlar": {
+      "latitude": 41.068665719528894,
+      "longitude": 28.871634050903463
+    }
+  },
+  {
+    "kargo_id": "PKG010",
+    "alici": "Müşteri 10",
+    "adres": "Oruçreis, Giyimkent 17. Sk. No:77A, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0010",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.07421448505956,
+      "longitude": 28.872783616332644
+    }
+  },
+  {
+    "kargo_id": "PKG011",
+    "alici": "Müşteri 11",
+    "adres": "15 Temmuz, Hulusi Akar Cd no:9, 34848 Esenler/İstanbul",
+    "telefon": "+90-555-0011",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06467199605252,
+      "longitude": 28.87487824268142
+    }
+  },
+  {
+    "kargo_id": "PKG012",
+    "alici": "Müşteri 12",
+    "adres": "15 Temmuz, Yasemin Sk. no: 1, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0012",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "15:00-18:00",
+    "koordinatlar": {
+      "latitude": 41.062342141453705,
+      "longitude": 28.873356032808758
+    }
+  },
+  {
+    "kargo_id": "PKG013",
+    "alici": "Müşteri 13",
+    "adres": "Turgut Reis, 509. Sk. No:3, 34235 Esenler/İstanbul",
+    "telefon": "+90-555-0013",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06101688368856,
+      "longitude": 28.863080354717624
+    }
+  },
+  {
+    "kargo_id": "PKG014",
+    "alici": "Müşteri 14",
+    "adres": "100. Yıl, 38. Sk. No:35, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0014",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06397765181292,
+      "longitude": 28.85128179897116
+    }
+  },
+  {
+    "kargo_id": "PKG015",
+    "alici": "Müşteri 15",
+    "adres": "100. Yıl, Veysel Karani Cd. No:64, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0015",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "08:00-11:00",
+    "koordinatlar": {
+      "latitude": 41.062876821124405,
+      "longitude": 28.850464091558777
+    }
+  },
+  {
+    "kargo_id": "PKG016",
+    "alici": "Müşteri 16",
+    "adres": "100. Yıl, Veysel Karani Cd. No:36, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0016",
+    "teslimat_turu": "express",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.06125436838529,
+      "longitude": 28.85108682105956
+    }
+  },
+  {
+    "kargo_id": "PKG017",
+    "alici": "Müşteri 17",
+    "adres": "100. Yıl, 2152 Sk No:48, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0017",
+    "teslimat_turu": "standard",
+    "zaman_penceresi": null,
+    "koordinatlar": {
+      "latitude": 41.05948514608763,
+      "longitude": 28.85027343801976
+    }
+  },
+  {
+    "kargo_id": "PKG018",
+    "alici": "Müşteri 18",
+    "adres": "100. Yıl, 2. Sk. No:18/B, 34204 Bağcılar/İstanbul",
+    "telefon": "+90-555-0018",
+    "teslimat_turu": "scheduled",
+    "zaman_penceresi": "13:00-16:00",
+    "koordinatlar": {
+      "latitude": 41.056669188864674,
+      "longitude": 28.85083170941293
+    }
+  }
+]

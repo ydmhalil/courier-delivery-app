@@ -6,11 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { packageService } from '../../services/packageService';
 import { routeService } from '../../services/routeService';
+import { errorService } from '../../services/errorService';
+import { configService } from '../../services/configService';
 
 const DashboardScreen = ({ navigation }) => {
   const { user, loading: authLoading } = useAuth();
@@ -23,6 +27,10 @@ const DashboardScreen = ({ navigation }) => {
     delivered: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const shouldLog = configService.shouldLog();
 
   useEffect(() => {
     // Only load data after auth loading is complete
@@ -31,31 +39,80 @@ const DashboardScreen = ({ navigation }) => {
     }
   }, [authLoading]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isRefresh = false) => {
     try {
-      console.log('📊 Dashboard: Loading dashboard data...');
-      console.log('📊 Dashboard: AuthLoading:', authLoading);
-      console.log('📊 Dashboard: User:', !!user);
+      if (shouldLog) {
+        console.log('📊 Dashboard: Loading dashboard data...');
+        console.log('📊 Dashboard: AuthLoading:', authLoading);
+        console.log('📊 Dashboard: User:', !!user);
+        console.log('📊 Dashboard: IsRefresh:', isRefresh);
+      }
       
-      setLoading(true);
-      const packagesData = await packageService.getAllPackages();
-      console.log('📊 Dashboard: Packages loaded:', packagesData.length);
-      setPackages(packagesData);
+      // Clear previous error
+      setError(null);
+      
+      if (!isRefresh) {
+        setLoading(true);
+      }
+      
+      // Check if user is authenticated
+      if (!user) {
+        throw new Error('Kullanıcı oturumu bulunamadı');
+      }
+      
+      // Load packages with timeout
+      const packagesData = await Promise.race([
+        packageService.getAllPackages(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        )
+      ]);
+      
+      if (shouldLog) {
+        console.log('📊 Dashboard: Packages loaded:', packagesData?.length || 0);
+      }
+      
+      setPackages(packagesData || []);
       
       // Calculate statistics
       const newStats = {
-        total: packagesData.length,
-        express: packagesData.filter(p => p.delivery_type === 'express').length,
-        scheduled: packagesData.filter(p => p.delivery_type === 'scheduled').length,
-        standard: packagesData.filter(p => p.delivery_type === 'standard').length,
-        delivered: packagesData.filter(p => p.status === 'delivered').length,
+        total: packagesData?.length || 0,
+        express: packagesData?.filter(p => p.delivery_type === 'express').length || 0,
+        scheduled: packagesData?.filter(p => p.delivery_type === 'scheduled').length || 0,
+        standard: packagesData?.filter(p => p.delivery_type === 'standard').length || 0,
+        delivered: packagesData?.filter(p => p.status === 'delivered').length || 0,
       };
       setStats(newStats);
+      
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      const errorInfo = errorService.handleError(error, 'Dashboard Data Loading', { 
+        silent: false,
+        onRetry: () => loadDashboardData(isRefresh)
+      });
+      
+      setError(errorInfo.userMessage);
+      
+      // Set empty data on error
+      setPackages([]);
+      setStats({
+        total: 0,
+        express: 0,
+        scheduled: 0,
+        standard: 0,
+        delivered: 0,
+      });
+      
     } finally {
       setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      }
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadDashboardData(true);
   };
 
   const getDeliveryTypeColor = (type) => {
@@ -90,18 +147,59 @@ const DashboardScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Loading screen for initial load
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={styles.loadingText}>Dashboard yükleniyor...</Text>
+      </View>
+    );
+  }
+
+  // Error screen with retry option
+  if (error && !refreshing && packages.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+        <Text style={styles.errorTitle}>Veri Yüklenemedi</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => loadDashboardData()}>
+          <Ionicons name="refresh" size={20} color="white" />
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={loadDashboardData} />
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh}
+          colors={['#3B82F6']}
+          tintColor="#3B82F6"
+        />
       }
     >
+      {/* Error banner (if error but has cached data) */}
+      {error && packages.length > 0 && (
+        <View style={styles.errorBanner}>
+          <Ionicons name="warning-outline" size={16} color="#F59E0B" />
+          <Text style={styles.errorBannerText}>Veriler güncel olmayabilir</Text>
+          <TouchableOpacity onPress={() => loadDashboardData()}>
+            <Ionicons name="refresh" size={16} color="#F59E0B" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good morning,</Text>
-          <Text style={styles.userName}>{user?.full_name}</Text>
+          <Text style={styles.greeting}>Günaydın,</Text>
+          <Text style={styles.userName}>{user?.full_name || 'Kurye'}</Text>
         </View>
         <TouchableOpacity style={styles.notificationButton}>
           <Ionicons name="notifications-outline" size={24} color="#374151" />
@@ -371,6 +469,69 @@ const styles = StyleSheet.create({
   packageAddress: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  // Loading states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  // Error states
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Error banner
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#92400E',
   },
 });
 

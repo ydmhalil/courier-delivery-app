@@ -57,7 +57,7 @@ async def register_courier(courier: CourierCreate, db: Session = Depends(get_db)
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Bu e-posta adresi zaten kayıtlı"
         )
     
     # Create new courier
@@ -76,12 +76,20 @@ async def register_courier(courier: CourierCreate, db: Session = Depends(get_db)
 
 @router.post("/login", response_model=Token)
 async def login_courier(courier: CourierLogin, db: Session = Depends(get_db)):
-    # Authenticate user
+    # Check if user exists
     db_user = db.query(Courier).filter(Courier.email == courier.email).first()
-    if not db_user or not db_user.verify_password(courier.password):
+    if not db_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check password
+    if not db_user.verify_password(courier.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Yanlış şifre girdiniz",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

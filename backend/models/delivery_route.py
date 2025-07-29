@@ -15,8 +15,8 @@ class DeliveryRoute(Base):
     estimated_duration = Column(Integer)  # Estimated duration in minutes
     
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    route_date = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    route_date = Column(DateTime, nullable=False)
     
     # Relationships
     courier = relationship("Courier", back_populates="routes")

@@ -14,8 +14,8 @@ class Courier(Base):
     full_name = Column(String, nullable=False)
     phone = Column(String)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
 
     def verify_password(self, password: str) -> bool:
         return pwd_context.verify(password, self.hashed_password)

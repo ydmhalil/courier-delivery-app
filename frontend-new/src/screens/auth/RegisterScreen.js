@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
 const RegisterScreen = ({ navigation }) => {
@@ -21,47 +22,82 @@ const RegisterScreen = ({ navigation }) => {
     phone: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const { register } = useAuth();
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const validateForm = () => {
+    const { email, password, confirmPassword, full_name } = formData;
+    const newErrors = {};
+
+    if (!full_name.trim()) {
+      newErrors.full_name = 'Ad Soyad gereklidir';
+    }
+
+    if (!email.trim()) {
+      newErrors.email = 'E-posta adresi gereklidir';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Geçerli bir e-posta adresi girin';
+    }
+
+    if (!password) {
+      newErrors.password = 'Şifre gereklidir';
+    } else if (password.length < 6) {
+      newErrors.password = 'Şifre en az 6 karakter olmalıdır';
+    }
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Şifre tekrarı gereklidir';
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Şifreler eşleşmiyor';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = async () => {
-    const { email, password, confirmPassword, full_name, phone } = formData;
-
-    if (!email || !password || !full_name) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
+    setErrors({});
+    
     const result = await register({
-      email,
-      password,
-      full_name,
-      phone,
+      email: formData.email,
+      password: formData.password,
+      full_name: formData.full_name,
+      phone: formData.phone,
     });
     setLoading(false);
 
     if (result.success) {
       Alert.alert(
-        'Success',
-        'Account created successfully! Please login.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        'Başarılı',
+        'Hesabınız başarıyla oluşturuldu! Lütfen giriş yapın.',
+        [{ text: 'Tamam', onPress: () => navigation.navigate('Login') }]
       );
     } else {
-      Alert.alert('Registration Failed', result.error);
+      // Backend'ten gelen hata mesajını kullan
+      let errorMessage = result.error || 'Kayıt işlemi başarısız';
+      
+      if (errorMessage.includes('email') || errorMessage.includes('e-posta')) {
+        setErrors({ email: errorMessage });
+      } else if (errorMessage.includes('şifre') || errorMessage.includes('password')) {
+        setErrors({ password: errorMessage });
+      } else {
+        Alert.alert('Kayıt Hatası', errorMessage);
+      }
     }
   };
 
@@ -72,69 +108,123 @@ const RegisterScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join our courier network</Text>
+          <Text style={styles.title}>Hesap Oluştur</Text>
+          <Text style={styles.subtitle}>Kurye ağımıza katılın</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name *</Text>
+            <Text style={styles.label}>Ad Soyad *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.full_name && styles.inputError
+              ]}
               value={formData.full_name}
               onChangeText={(value) => handleInputChange('full_name', value)}
-              placeholder="Enter your full name"
+              placeholder="Ad ve soyadınızı girin"
               autoComplete="name"
             />
+            {errors.full_name && (
+              <Text style={styles.errorText}>{errors.full_name}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email *</Text>
+            <Text style={styles.label}>E-posta *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.email && styles.inputError
+              ]}
               value={formData.email}
               onChangeText={(value) => handleInputChange('email', value)}
-              placeholder="Enter your email"
+              placeholder="E-posta adresinizi girin"
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.label}>Telefon</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.phone && styles.inputError
+              ]}
               value={formData.phone}
               onChangeText={(value) => handleInputChange('phone', value)}
-              placeholder="Enter your phone number"
+              placeholder="Telefon numaranızı girin"
               keyboardType="phone-pad"
               autoComplete="tel"
             />
+            {errors.phone && (
+              <Text style={styles.errorText}>{errors.phone}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.password}
-              onChangeText={(value) => handleInputChange('password', value)}
-              placeholder="Enter your password"
-              secureTextEntry
-              autoComplete="password-new"
-            />
+            <Text style={styles.label}>Şifre * (En az 6 karakter)</Text>
+            <View style={[
+              styles.passwordContainer,
+              errors.password && styles.inputError
+            ]}>
+              <TextInput
+                style={styles.passwordInput}
+                value={formData.password}
+                onChangeText={(value) => handleInputChange('password', value)}
+                placeholder="Şifrenizi girin"
+                secureTextEntry={!showPassword}
+                autoComplete="password-new"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#6B7280"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Confirm Password *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.confirmPassword}
-              onChangeText={(value) => handleInputChange('confirmPassword', value)}
-              placeholder="Confirm your password"
-              secureTextEntry
-              autoComplete="password-new"
-            />
+            <Text style={styles.label}>Şifre Tekrarı *</Text>
+            <View style={[
+              styles.passwordContainer,
+              errors.confirmPassword && styles.inputError
+            ]}>
+              <TextInput
+                style={styles.passwordInput}
+                value={formData.confirmPassword}
+                onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                placeholder="Şifrenizi tekrar girin"
+                secureTextEntry={!showConfirmPassword}
+                autoComplete="password-new"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#6B7280"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+            )}
           </View>
 
           <TouchableOpacity
@@ -143,14 +233,14 @@ const RegisterScreen = ({ navigation }) => {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Hesap oluşturuluyor...' : 'Hesap Oluştur'}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>Zaten hesabınız var mı? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.linkText}>Sign In</Text>
+              <Text style={styles.linkText}>Giriş Yap</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -212,6 +302,31 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#F9FAFB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 12,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    marginTop: 4,
   },
   button: {
     backgroundColor: '#3B82F6',

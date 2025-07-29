@@ -10,26 +10,57 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const { login } = useAuth();
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!email.trim()) {
+      newErrors.email = 'E-posta adresi gereklidir';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Geçerli bir e-posta adresi girin';
+    }
+    
+    if (!password) {
+      newErrors.password = 'Şifre gereklidir';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
+    setErrors({});
+    
     const result = await login(email, password);
     setLoading(false);
 
     if (!result.success) {
-      Alert.alert('Login Failed', result.error);
+      // Backend'ten gelen hata mesajını kullan
+      let errorMessage = result.error || 'Giriş yapılamadı';
+      
+      // Spesifik hata türlerine göre kullanıcı dostu mesajlar
+      if (errorMessage.includes('email') || errorMessage.includes('e-posta')) {
+        setErrors({ email: errorMessage });
+      } else if (errorMessage.includes('şifre') || errorMessage.includes('password')) {
+        setErrors({ password: errorMessage });
+      } else {
+        Alert.alert('Giriş Hatası', errorMessage);
+      }
     }
   };
 
@@ -41,33 +72,67 @@ const LoginScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Courier Delivery</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={styles.subtitle}>Hesabınıza giriş yapın</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>E-posta</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.email && styles.inputError
+              ]}
               value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) {
+                  setErrors(prev => ({ ...prev, email: null }));
+                }
+              }}
+              placeholder="E-posta adresinizi girin"
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              secureTextEntry
-              autoComplete="password"
-            />
+            <Text style={styles.label}>Şifre</Text>
+            <View style={[
+              styles.passwordContainer,
+              errors.password && styles.inputError
+            ]}>
+              <TextInput
+                style={styles.passwordInput}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) {
+                    setErrors(prev => ({ ...prev, password: null }));
+                  }
+                }}
+                placeholder="Şifrenizi girin"
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#6B7280"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
           </View>
 
           <TouchableOpacity
@@ -76,14 +141,14 @@ const LoginScreen = ({ navigation }) => {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Hesabınız yok mu? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>Sign Up</Text>
+              <Text style={styles.linkText}>Kayıt Ol</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -145,6 +210,31 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#F9FAFB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 12,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    marginTop: 4,
   },
   button: {
     backgroundColor: '#3B82F6',

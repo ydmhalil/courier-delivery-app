@@ -48,3 +48,7 @@ class QRCodeData(BaseModel):
     telefon: str  # phone in Turkish
     teslimat_turu: str  # delivery type in Turkish
     zaman_penceresi: Optional[List[str]] = None  # time window [start, end]
+    # Coordinate data (optional but preferred)
+    latitude: Optional[float] = None  # GPS latitude
+    longitude: Optional[float] = None  # GPS longitude
+    koordinatlar: Optional[dict] = None  # Alternative coordinate format

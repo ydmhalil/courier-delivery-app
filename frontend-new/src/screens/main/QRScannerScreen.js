@@ -10,6 +10,7 @@ import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { packageService } from '../../services/packageService';
+import { locationService } from '../../services/locationService';
 
 const QRScannerScreen = ({ navigation }) => {
   const { loading: authLoading } = useAuth();
@@ -33,24 +34,42 @@ const QRScannerScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
+      console.log('📱 QR Scanner: Processing QR code data...');
+      
       // Process QR code data
       const qrData = packageService.processQRData(data);
+      console.log('📱 QR Scanner: Processed data:', qrData);
+      
+      // Check if geocoding is needed (coordinates missing)
+      if (qrData.geocode_required && qrData.adres) {
+        console.log('📍 QR Scanner: Coordinates missing, attempting geocoding...');
+        
+        try {
+          // Try to geocode the address to get coordinates
+          // Note: expo-location doesn't have forward geocoding, 
+          // but we can enhance this with a geocoding service later
+          console.log('🗺️ QR Scanner: Address geocoding not available, proceeding without coordinates');
+        } catch (geocodeError) {
+          console.warn('❌ QR Scanner: Geocoding failed:', geocodeError);
+        }
+      }
       
       // Create package from QR code
       const newPackage = await packageService.createPackageFromQR(qrData);
+      console.log('✅ QR Scanner: Package created successfully:', newPackage);
       
       Alert.alert(
-        'Success!',
-        `Package ${newPackage.kargo_id} has been added successfully.`,
+        'Başarılı!',
+        `Paket ${newPackage.kargo_id} başarıyla eklendi.${qrData.geocode_required ? '\n\nNot: Koordinat bilgisi eksik, adres metni kullanıldı.' : ''}`,
         [
           {
-            text: 'View Package',
+            text: 'Paketi Görüntüle',
             onPress: () => {
               navigation.replace('PackageDetail', { packageId: newPackage.id });
             },
           },
           {
-            text: 'Scan Another',
+            text: 'Yeni Tarama',
             onPress: () => {
               setScanned(false);
               setLoading(false);
@@ -59,13 +78,13 @@ const QRScannerScreen = ({ navigation }) => {
         ]
       );
     } catch (error) {
-      console.error('QR scan error:', error);
+      console.error('❌ QR Scanner: Error processing QR code:', error);
       Alert.alert(
-        'Error',
-        error.message || 'Failed to process QR code',
+        'Hata',
+        error.message || 'QR kod işlenirken bir hata oluştu',
         [
           {
-            text: 'Try Again',
+            text: 'Tekrar Dene',
             onPress: () => {
               setScanned(false);
               setLoading(false);

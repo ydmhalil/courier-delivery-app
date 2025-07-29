@@ -76,7 +76,9 @@ async def create_package_from_qr(
     current_user: Courier = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create package from QR code data"""
+    """Create package from QR code data with coordinate prioritization"""
+    print(f"📱 QR Scan: Processing QR data for package {qr_data.kargo_id}")
+    
     # Translate Turkish fields to English
     delivery_type = translate_delivery_type(qr_data.teslimat_turu)
     
@@ -87,8 +89,28 @@ async def create_package_from_qr(
         time_start = qr_data.zaman_penceresi[0]
         time_end = qr_data.zaman_penceresi[1]
     
-    # Get coordinates for the address
-    lat, lon = get_coordinates(qr_data.adres)
+    # Coordinate prioritization logic
+    lat, lon = None, None
+    
+    # 1. First priority: Direct coordinate fields in QR data
+    if qr_data.latitude is not None and qr_data.longitude is not None:
+        lat, lon = qr_data.latitude, qr_data.longitude
+        print(f"📍 QR Scan: Using coordinates from QR data: {lat}, {lon}")
+    
+    # 2. Second priority: Coordinate object format
+    elif qr_data.koordinatlar and isinstance(qr_data.koordinatlar, dict):
+        if 'latitude' in qr_data.koordinatlar and 'longitude' in qr_data.koordinatlar:
+            lat, lon = qr_data.koordinatlar['latitude'], qr_data.koordinatlar['longitude']
+            print(f"📍 QR Scan: Using coordinates from koordinatlar object: {lat}, {lon}")
+    
+    # 3. Last resort: Geocode the address
+    if lat is None or lon is None:
+        print(f"🗺️ QR Scan: No coordinates in QR data, geocoding address: {qr_data.adres}")
+        lat, lon = get_coordinates(qr_data.adres)
+        if lat and lon:
+            print(f"📍 QR Scan: Geocoded coordinates: {lat}, {lon}")
+        else:
+            print(f"❌ QR Scan: Failed to geocode address: {qr_data.adres}")
     
     # Create package
     db_package = Package(
@@ -107,6 +129,9 @@ async def create_package_from_qr(
     db.add(db_package)
     db.commit()
     db.refresh(db_package)
+    
+    print(f"✅ QR Scan: Package {qr_data.kargo_id} created successfully with coordinates: {lat}, {lon}")
+    return db_package
     
     return db_package
 

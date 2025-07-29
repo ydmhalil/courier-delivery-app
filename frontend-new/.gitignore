@@ -1,5 +1,22 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# Environment files - SECURITY CRITICAL
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+
+# API Keys and Credentials - NEVER COMMIT
+credentials/
+*.json
+*.p8
+*.p12
+*.key
+*.pem
+config/keys.js
+google-cloud-key.json
+
 # dependencies
 node_modules/
 

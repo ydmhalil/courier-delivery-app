@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       console.error('❌ Login error:', error);
       return { 
         success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
+        error: error.message || 'Giriş yapılırken bir hata oluştu'
       };
     }
   };
@@ -92,10 +92,10 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.register(userData);
       return { success: true, data: response };
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
       return { 
         success: false, 
-        error: error.response?.data?.detail || 'Registration failed' 
+        error: error.message || 'Kayıt olurken bir hata oluştu'
       };
     }
   };

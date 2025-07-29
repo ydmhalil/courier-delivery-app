@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -9,6 +9,13 @@ class CourierBase(BaseModel):
 
 class CourierCreate(CourierBase):
     password: str
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Şifre en az 6 karakter olmalıdır')
+        return v
 
 class CourierLogin(BaseModel):
     email: EmailStr
