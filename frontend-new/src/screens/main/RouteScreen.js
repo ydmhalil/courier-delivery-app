@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { routeService } from '../../services/routeService';
 import LocationSelectorModal from '../../components/LocationSelectorModal';
 
-const RouteScreen = () => {
+const RouteScreen = ({ navigation }) => {
   const { user, authLoading } = useAuth();
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -424,6 +424,32 @@ const RouteScreen = () => {
               <Text style={styles.actionText}>Haritada Göster</Text>
             </TouchableOpacity>
             
+            {/* Teslimat Detayları Butonu - DEPOT dışındaki tüm durumlar için */}
+            {!isDepot && (
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.detailButton]}
+                onPress={() => {
+                  console.log('📦 Stop object:', stop);
+                  
+                  // stop.package_id backend'ten gelen numeric ID
+                  const packageId = stop.package_id;
+                  
+                  if (packageId && typeof packageId === 'number' && packageId > 0) {
+                    console.log('📦 Navigating to package details with ID:', packageId);
+                    navigation.navigate('PackageDetail', { 
+                      packageId: packageId 
+                    });
+                  } else {
+                    console.log('📦 Invalid package ID:', packageId);
+                    Alert.alert('Bilgi', 'Bu teslimat için detay bilgisi henüz sisteme girilmemiş.');
+                  }
+                }}
+              >
+                <Ionicons name="document-text" size={16} color="#10B981" />
+                <Text style={[styles.actionText, { color: '#10B981' }]}>Teslimat Detayları</Text>
+              </TouchableOpacity>
+            )}
+            
             {/* Müşteriyi Ara Butonu */}
             {stop.phone && (
               <TouchableOpacity 
@@ -693,7 +719,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   mapContainer: {
-    height: 350,
+    height: 280,
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
@@ -967,6 +993,7 @@ const styles = StyleSheet.create({
   // Aksiyon butonları
   cardActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 16,
     paddingBottom: 12,
     gap: 8,
@@ -974,6 +1001,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: '30%',
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 8,
@@ -984,6 +1012,11 @@ const styles = StyleSheet.create({
   },
   callButton: {
     backgroundColor: '#3B82F6',
+  },
+  detailButton: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#10B981',
   },
   actionText: {
     fontSize: 12,

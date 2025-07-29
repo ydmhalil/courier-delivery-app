@@ -318,7 +318,6 @@ const DashboardScreen = ({ navigation }) => {
             value={deliveryStats.delivered_packages}
             color="#10B981"
             icon="checkmark-circle"
-            percentage={deliveryStats.success_rate}
           />
           <DeliveryStatCard
             title="Başarısız Teslimat"

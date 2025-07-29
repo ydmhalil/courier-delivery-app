@@ -41,6 +41,23 @@ const PackageStack = () => {
   );
 };
 
+const RouteStack = () => {
+  return (
+    <Stack.Navigator initialRouteName="Route">
+      <Stack.Screen 
+        name="Route" 
+        component={RouteScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="PackageDetail" 
+        component={PackageDetailScreen}
+        options={{ title: 'Package Details' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
 const MainNavigator = () => {
   return (
     <Tab.Navigator
@@ -67,7 +84,7 @@ const MainNavigator = () => {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Packages" component={PackageStack} />
-      <Tab.Screen name="Routes" component={RouteScreen} />
+      <Tab.Screen name="Routes" component={RouteStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
