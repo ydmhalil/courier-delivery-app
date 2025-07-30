@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,50 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import LocationSelectorModal from '../../components/LocationSelectorModal';
 
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
+  const [defaultDepot, setDefaultDepot] = useState(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  // Load saved depot location on component mount
+  useEffect(() => {
+    loadDefaultDepot();
+  }, []);
+
+  const loadDefaultDepot = async () => {
+    try {
+      const savedDepot = await AsyncStorage.getItem('defaultDepot');
+      if (savedDepot) {
+        setDefaultDepot(JSON.parse(savedDepot));
+      } else {
+        // Default depot location (Kadıköy)
+        setDefaultDepot({
+          latitude: 40.9877,
+          longitude: 29.0283,
+          name: 'Kadıköy Kargo Merkezi',
+          address: 'Kadıköy, İstanbul'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading default depot:', error);
+    }
+  };
+
+  const handleDepotLocationSelected = async (location) => {
+    try {
+      await AsyncStorage.setItem('defaultDepot', JSON.stringify(location));
+      setDefaultDepot(location);
+      setShowLocationSelector(false);
+      Alert.alert('Başarılı', 'Ana depo konumunuz güncellendi.');
+    } catch (error) {
+      console.error('Error saving depot location:', error);
+      Alert.alert('Hata', 'Konum kaydedilemedi. Lütfen tekrar deneyin.');
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -46,6 +86,7 @@ const ProfileScreen = () => {
   );
 
   return (
+    <>
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -69,6 +110,13 @@ const ProfileScreen = () => {
       {/* Profile Options */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
+        
+        <ProfileItem
+          icon="business-outline"
+          title="Ana Depo Konumu"
+          subtitle={defaultDepot ? defaultDepot.name || defaultDepot.address : 'Konum seçilmedi'}
+          onPress={() => setShowLocationSelector(true)}
+        />
         
         <ProfileItem
           icon="person-outline"
@@ -182,6 +230,14 @@ const ProfileScreen = () => {
       {/* Bottom spacing */}
       <View style={styles.bottomSpacing} />
     </ScrollView>
+    
+    {/* Location Selector Modal */}
+    <LocationSelectorModal
+      visible={showLocationSelector}
+      onLocationSelected={handleDepotLocationSelected}
+      onClose={() => setShowLocationSelector(false)}
+    />
+    </>
   );
 };
 

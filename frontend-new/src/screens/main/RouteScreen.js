@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { routeService } from '../../services/routeService';
 import LocationSelectorModal from '../../components/LocationSelectorModal';
@@ -18,6 +20,7 @@ const RouteScreen = ({ navigation }) => {
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(false);
   const [startingLocation, setStartingLocation] = useState(null);
+  const [depotLocation, setDepotLocation] = useState(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const mapRef = useRef(null);
   const [mapRegion, setMapRegion] = useState({
@@ -30,14 +33,59 @@ const RouteScreen = ({ navigation }) => {
   useEffect(() => {
     // Only load data after auth loading is complete
     if (!authLoading) {
+      loadDefaultDepot();
       loadOptimizedRoute();
     }
   }, [authLoading]);
+
+  // Reload depot when screen comes into focus (user might have changed it in profile)
+  useFocusEffect(
+    useCallback(() => {
+      if (!authLoading) {
+        loadDefaultDepot();
+      }
+    }, [authLoading])
+  );
+
+  const loadDefaultDepot = async () => {
+    try {
+      const savedDepot = await AsyncStorage.getItem('defaultDepot');
+      if (savedDepot) {
+        const depot = JSON.parse(savedDepot);
+        console.log('🏢 Loaded default depot from storage:', depot);
+        setDepotLocation(depot);
+        
+        // Update map region to center on depot
+        if (depot.latitude && depot.longitude) {
+          setMapRegion({
+            latitude: depot.latitude,
+            longitude: depot.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading default depot:', error);
+    }
+  };
 
   const loadOptimizedRoute = async () => {
     try {
       console.log('🗺️ RouteScreen: Loading optimized route...');
       console.log('🗺️ RouteScreen: AuthLoading:', authLoading);
+      
+      // Load saved depot location for route optimization
+      let depotLocation = null;
+      try {
+        const savedDepot = await AsyncStorage.getItem('defaultDepot');
+        if (savedDepot) {
+          depotLocation = JSON.parse(savedDepot);
+          console.log('🏢 Using saved depot for route optimization:', depotLocation);
+        }
+      } catch (error) {
+        console.error('Error loading depot for route:', error);
+      }
       
       // First test if route endpoint is reachable
       console.log('🧪 Testing route endpoint...');
@@ -45,7 +93,8 @@ const RouteScreen = ({ navigation }) => {
       console.log('🧪 Test result:', testResult);
       
       setLoading(true);
-      const routeData = await routeService.getOptimizedRoute();
+      // Pass depot location to route service
+      const routeData = await routeService.getOptimizedRoute(null, depotLocation);
       console.log('🗺️ RouteScreen: Route data received:', routeData);
       setRoute(routeData);
       
@@ -180,7 +229,7 @@ const RouteScreen = ({ navigation }) => {
       case 'standard':
         return '#10B981'; // Yeşil - standart
       case 'depot':
-        return '#6B7280'; // Gri - depo
+        return '#1E40AF'; // Mavi - depo
       default:
         return '#9CA3AF'; // Açık gri - bilinmeyen
     }
@@ -272,7 +321,7 @@ const RouteScreen = ({ navigation }) => {
 
   // Modern ve bilgilendirici durak kartı
   const ModernStopCard = ({ stop, index }) => {
-    const isDepot = stop.kargo_id === 'DEPOT';
+    const isDepot = stop.kargo_id === 'DEPOT' || stop.kargo_id?.includes('DEPOT');
     
     const getDeliveryTypeColor = (type) => {
       switch (type?.toLowerCase()) {
@@ -339,13 +388,13 @@ const RouteScreen = ({ navigation }) => {
             { backgroundColor: isDepot ? '#2563EB' : getMarkerColor(stop.delivery_type, stop.status) }
           ]}>
             <Text style={styles.sequenceText}>
-              {isDepot ? '🏢' : stop.sequence}
+              {isDepot ? 'D' : index}
             </Text>
           </View>
           
           <View style={styles.cardTitleSection}>
             <Text style={styles.cardTitle}>
-              {isDepot ? 'DEPOT - Merkez' : `Teslimat #${stop.sequence}`}
+              {isDepot ? 'DEPO - Şube' : `Teslimat #${index}`}
             </Text>
             <Text style={styles.cardSubtitle}>
               {isDepot ? 'Başlangıç Noktası' : stop.kargo_id}
@@ -413,72 +462,60 @@ const RouteScreen = ({ navigation }) => {
         )}
         
         {/* Aksiyon Butonları */}
-        {!isDepot && (
-          <View style={styles.cardActions}>
-            {/* Harita Butonu */}
+        <View style={styles.cardActions}>
+          {/* Harita Butonu - Tüm stop'lar için */}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleStopPress(stop)}
+          >
+            <Ionicons name="location" size={16} color="#3B82F6" />
+            <Text style={styles.actionText}>Haritada Göster</Text>
+          </TouchableOpacity>
+          
+          {/* Teslimat Detayları Butonu - Sadece kargolar için */}
+          {!isDepot && (
             <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => handleStopPress(stop)}
-            >
-              <Ionicons name="location" size={16} color="#3B82F6" />
-              <Text style={styles.actionText}>Haritada Göster</Text>
-            </TouchableOpacity>
-            
-            {/* Teslimat Detayları Butonu - DEPOT dışındaki tüm durumlar için */}
-            {!isDepot && (
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.detailButton]}
-                onPress={() => {
-                  console.log('📦 Stop object:', stop);
-                  
-                  // stop.package_id backend'ten gelen numeric ID
-                  const packageId = stop.package_id;
-                  
-                  if (packageId && typeof packageId === 'number' && packageId > 0) {
-                    console.log('📦 Navigating to package details with ID:', packageId);
-                    navigation.navigate('PackageDetail', { 
-                      packageId: packageId 
-                    });
-                  } else {
-                    console.log('📦 Invalid package ID:', packageId);
-                    Alert.alert('Bilgi', 'Bu teslimat için detay bilgisi henüz sisteme girilmemiş.');
-                  }
-                }}
-              >
-                <Ionicons name="document-text" size={16} color="#10B981" />
-                <Text style={[styles.actionText, { color: '#10B981' }]}>Teslimat Detayları</Text>
-              </TouchableOpacity>
-            )}
-            
-            {/* Müşteriyi Ara Butonu */}
-            {stop.phone && (
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.callButton]}
-                onPress={() => {
-                  // Telefon arama fonksiyonu
-                  const { Linking } = require('react-native');
-                  const phoneNumber = stop.phone.replace(/[^0-9+]/g, '');
-                  Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-                    Alert.alert('Hata', 'Telefon uygulaması açılamadı');
+              style={[styles.actionButton, styles.detailButton]}
+              onPress={() => {
+                console.log('📦 Stop object:', stop);
+                
+                // stop.package_id backend'ten gelen numeric ID
+                const packageId = stop.package_id;
+                
+                if (packageId && typeof packageId === 'number' && packageId > 0) {
+                  console.log('📦 Navigating to package details with ID:', packageId);
+                  navigation.navigate('PackageDetail', { 
+                    packageId: packageId 
                   });
-                }}
-              >
-                <Ionicons name="call" size={16} color="white" />
-                <Text style={[styles.actionText, { color: 'white' }]}>Müşteriyi Ara</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        {/* Depot için farklı footer */}
-        {isDepot && (
-          <View style={styles.cardFooter}>
-            <View style={styles.tapIndicator}>
-              <Ionicons name="business" size={16} color="#2563EB" />
-              <Text style={styles.tapText}>Başlangıç noktası</Text>
-            </View>
-          </View>
-        )}
+                } else {
+                  console.log('📦 Invalid package ID:', packageId);
+                  Alert.alert('Bilgi', 'Bu teslimat için detay bilgisi henüz sisteme girilmemiş.');
+                }
+              }}
+            >
+              <Ionicons name="document-text" size={16} color="#10B981" />
+              <Text style={[styles.actionText, { color: '#10B981' }]}>Teslimat Detayları</Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Müşteriyi Ara Butonu - Sadece telefon numarası olan kargolar için */}
+          {!isDepot && stop.phone && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.callButton]}
+              onPress={() => {
+                // Telefon arama fonksiyonu
+                const { Linking } = require('react-native');
+                const phoneNumber = stop.phone.replace(/[^0-9+]/g, '');
+                Linking.openURL(`tel:${phoneNumber}`).catch(() => {
+                  Alert.alert('Hata', 'Telefon uygulaması açılamadı');
+                });
+              }}
+            >
+              <Ionicons name="call" size={16} color="white" />
+              <Text style={[styles.actionText, { color: 'white' }]}>Müşteriyi Ara</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -518,29 +555,29 @@ const RouteScreen = ({ navigation }) => {
           ref={mapRef}
           style={styles.map}
           region={mapRegion}
+          mapPadding={{ top: 60, right: 30, bottom: 60, left: 30 }}
         >
-          {/* Depot Marker */}
-          <Marker
-            coordinate={{
-              latitude: 40.9877,
-              longitude: 29.0283,
-            }}
-            title="🏢 DEPOT - Kadıköy Kargo Merkezi"
-            description="Starting point - All deliveries begin here"
-          >
-            <View
-              style={[
-                styles.depotMarkerContainer,
-                { backgroundColor: getMarkerColor('depot') },
-              ]}
+          {/* Depot Marker - Only show if depot location is set */}
+          {depotLocation && (
+            <Marker
+              coordinate={{
+                latitude: depotLocation.latitude,
+                longitude: depotLocation.longitude,
+              }}
+              title={`🏢 DEPOT - ${depotLocation.name || 'Seçilen Depo'}`}
+              description="Starting point - All deliveries begin here"
+              anchor={{ x: 0.5, y: 0.5 }}
+              centerOffset={{ x: 0, y: 0 }}
             >
-              <Text style={styles.depotMarkerText}>🏢</Text>
-            </View>
-          </Marker>
+              <View style={styles.simpleDepotMarker}>
+                <Text style={styles.depotLetter}>D</Text>
+              </View>
+            </Marker>
+          )}
           
           {/* Route Markers */}
           {route.stops
-            .filter(stop => stop.kargo_id !== 'DEPOT') // Don't show depot in numbered markers
+            .filter(stop => !stop.kargo_id?.includes('DEPOT')) // Don't show depot in numbered markers
             .map((stop, index) => (
             <Marker
               key={`marker-${stop.id || stop.kargo_id}-${index}`}
@@ -548,8 +585,10 @@ const RouteScreen = ({ navigation }) => {
                 latitude: stop.latitude,
                 longitude: stop.longitude,
               }}
-              title={`${stop.sequence}. ${stop.kargo_id}`}
+              title={`${index + 1}. ${stop.kargo_id}`}
               description={`${stop.recipient_name} - ${stop.delivery_type?.toUpperCase()} - Durum: ${stop.status || 'pending'}`}
+              anchor={{ x: 0.5, y: 0.5 }}
+              centerOffset={{ x: 0, y: 0 }}
             >
               <View
                 style={[
@@ -557,7 +596,7 @@ const RouteScreen = ({ navigation }) => {
                   { backgroundColor: getMarkerColor(stop.delivery_type, stop.status) },
                 ]}
               >
-                <Text style={styles.markerSequence}>{stop.sequence}</Text>
+                <Text style={styles.markerSequence}>{index + 1}</Text>
               </View>
             </Marker>
           ))}
@@ -622,13 +661,23 @@ const RouteScreen = ({ navigation }) => {
         </View>
         {route.stops
           .sort((a, b) => a.sequence - b.sequence)
-          .map((stop, index) => (
-          <ModernStopCard 
-            key={`card-${stop.id || stop.kargo_id}-${index}`} 
-            stop={stop} 
-            index={index + 1}
-          />
-        ))}
+          .map((stop, index) => {
+            const isDepot = stop.kargo_id === 'DEPOT' || stop.kargo_id?.includes('DEPOT');
+            // For delivery cards, calculate the delivery index (excluding depot)
+            const deliveryIndex = route.stops
+              .sort((a, b) => a.sequence - b.sequence)
+              .slice(0, index + 1)
+              .filter(s => !(s.kargo_id === 'DEPOT' || s.kargo_id?.includes('DEPOT')))
+              .length;
+            
+            return (
+              <ModernStopCard 
+                key={`card-${stop.id || stop.kargo_id}-${index}`} 
+                stop={stop} 
+                index={isDepot ? 0 : deliveryIndex}
+              />
+            );
+          })}
       </ScrollView>
 
       {/* Location Selector Modal */}
@@ -900,17 +949,73 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  depotMarkerContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  depotLetter: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  simpleDepotMarker: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    backgroundColor: '#1E40AF',
+    borderWidth: 2,
     borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  depotMarkerContainer: {
+    width: 60,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  depotMarkerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'white',
+    backgroundColor: '#1E40AF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    position: 'absolute',
+    top: 0,
+  },
+  depotMarkerPin: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#1E40AF',
+    position: 'absolute',
+    bottom: 0,
+    left: 22,
   },
   depotMarkerText: {
-    fontSize: 20,
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
