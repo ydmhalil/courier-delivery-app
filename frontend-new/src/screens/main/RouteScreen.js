@@ -531,17 +531,28 @@ const RouteScreen = ({ navigation }) => {
   if (!route || !route.stops || route.stops.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="map-outline" size={64} color="#D1D5DB" />
-        <Text style={styles.emptyTitle}>No route available</Text>
+        <Ionicons name="cube-outline" size={80} color="#6B7280" />
+        <Text style={styles.emptyTitle}>Henüz Kargo Yok</Text>
         <Text style={styles.emptySubtitle}>
-          No packages found for route optimization. Please check back later.
+          Teslimat rotası oluşturmak için önce kargo eklemeniz gerekiyor.
+        </Text>
+        <Text style={styles.emptyHint}>
+          📦 Packages sekmesinden yeni kargo ekleyebilirsiniz
         </Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={loadOptimizedRoute}
         >
           <Ionicons name="refresh" size={20} color="white" />
-          <Text style={styles.refreshButtonText}>Refresh</Text>
+          <Text style={styles.refreshButtonText}>Yenile</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.addPackageButton}
+          onPress={() => navigation.navigate('Packages')}
+        >
+          <Ionicons name="add-circle" size={20} color="#3B82F6" />
+          <Text style={styles.addPackageButtonText}>Kargo Ekle</Text>
         </TouchableOpacity>
       </View>
     );
@@ -1047,7 +1058,31 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 16,
+  },
+  emptyHint: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
     marginBottom: 24,
+    fontStyle: 'italic',
+  },
+  addPackageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderColor: '#3B82F6',
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 12,
+  },
+  addPackageButtonText: {
+    color: '#3B82F6',
+    fontSize: 16,
+    fontWeight: '600',
   },
   refreshButton: {
     flexDirection: 'row',

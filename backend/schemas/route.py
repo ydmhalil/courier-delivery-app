@@ -20,6 +20,8 @@ class OptimizedRoute(BaseModel):
     total_distance: float
     estimated_duration: int
     route_date: datetime
+    status: Optional[str] = "success"
+    message: Optional[str] = None
 
 class RouteResponse(BaseModel):
     id: int

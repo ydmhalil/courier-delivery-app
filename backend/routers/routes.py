@@ -59,7 +59,8 @@ async def get_optimized_route(
     start_lat: float = 41.0082,
     start_lng: float = 28.9784,
     start_address: str = "Istanbul Merkez Depo",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Get optimized delivery route using Google Cloud Route Optimization API
@@ -71,25 +72,32 @@ async def get_optimized_route(
         start_address: Starting location address (default: Istanbul Merkez Depo)
     """
     print(f"=== GOOGLE CLOUD ROUTE OPTIMIZATION REQUEST ===")
+    print(f"User: {current_user.full_name} (ID: {current_user.id}, Email: {current_user.email})")
     print(f"Date: {route_date}")
     print(f"Starting location: {start_address} ({start_lat}, {start_lng})")
     
     if not route_date:
         route_date = date.today()
     
-    # Get all packages that need delivery (for testing without authentication)
+    # Get packages for the current user (courier) only
     packages = db.query(Package).filter(
+        Package.courier_id == current_user.id,
         Package.status.in_([PackageStatus.PENDING, PackageStatus.IN_TRANSIT])
     ).all()
     
-    print(f"Found {len(packages)} packages")
+    print(f"Found {len(packages)} packages for user {current_user.full_name}")
     for pkg in packages:
         print(f"Package {pkg.kargo_id}: {pkg.address} (status: {pkg.status})")
     
     if not packages:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No packages found for route optimization"
+        # Return empty route instead of throwing error
+        return OptimizedRoute(
+            total_distance=0.0,
+            estimated_duration=0,
+            stops=[],
+            status="empty",
+            message="No packages found for route optimization",
+            route_date=datetime.combine(route_date, datetime.min.time())
         )
     
     # Initialize Google Cloud route optimizer
