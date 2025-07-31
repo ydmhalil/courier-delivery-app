@@ -15,6 +15,24 @@ import { useAuth } from '../../context/AuthContext';
 import { routeService } from '../../services/routeService';
 import LocationSelectorModal from '../../components/LocationSelectorModal';
 
+// Duration formatı helper fonksiyonu
+const formatDuration = (minutes) => {
+  if (!minutes || minutes === 0) return '0 dk';
+  
+  if (minutes < 60) {
+    return `${Math.round(minutes)} dk`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    
+    if (remainingMinutes === 0) {
+      return `${hours} saat`;
+    } else {
+      return `${hours} saat ${remainingMinutes} dk`;
+    }
+  }
+};
+
 const RouteScreen = ({ navigation }) => {
   const { user, authLoading } = useAuth();
   const [route, setRoute] = useState(null);
@@ -47,12 +65,25 @@ const RouteScreen = ({ navigation }) => {
     }, [authLoading])
   );
 
+  // Update map region when depot location changes
+  useEffect(() => {
+    if (depotLocation && depotLocation.latitude && depotLocation.longitude) {
+      console.log('🗺️ Depot location changed, updating map region:', depotLocation);
+      setMapRegion({
+        latitude: depotLocation.latitude,
+        longitude: depotLocation.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    }
+  }, [depotLocation]);
+
   const loadDefaultDepot = async () => {
     try {
       const savedDepot = await AsyncStorage.getItem('defaultDepot');
       if (savedDepot) {
         const depot = JSON.parse(savedDepot);
-        console.log('🏢 Loaded default depot from storage:', depot);
+        console.log('🏢 loadDefaultDepot: Setting depot location:', depot);
         setDepotLocation(depot);
         
         // Update map region to center on depot
@@ -64,6 +95,8 @@ const RouteScreen = ({ navigation }) => {
             longitudeDelta: 0.0421,
           });
         }
+      } else {
+        console.log('🏢 loadDefaultDepot: No saved depot found');
       }
     } catch (error) {
       console.error('Error loading default depot:', error);
@@ -76,15 +109,19 @@ const RouteScreen = ({ navigation }) => {
       console.log('🗺️ RouteScreen: AuthLoading:', authLoading);
       
       // Load saved depot location for route optimization
-      let depotLocation = null;
-      try {
-        const savedDepot = await AsyncStorage.getItem('defaultDepot');
-        if (savedDepot) {
-          depotLocation = JSON.parse(savedDepot);
-          console.log('🏢 Using saved depot for route optimization:', depotLocation);
+      let currentDepotLocation = depotLocation;
+      if (!currentDepotLocation) {
+        try {
+          const savedDepot = await AsyncStorage.getItem('defaultDepot');
+          if (savedDepot) {
+            currentDepotLocation = JSON.parse(savedDepot);
+            console.log('🏢 loadOptimizedRoute: Using saved depot (backup):', currentDepotLocation);
+          }
+        } catch (error) {
+          console.error('Error loading depot for route:', error);
         }
-      } catch (error) {
-        console.error('Error loading depot for route:', error);
+      } else {
+        console.log('🏢 loadOptimizedRoute: Using current depot state:', currentDepotLocation);
       }
       
       // First test if route endpoint is reachable
@@ -94,9 +131,23 @@ const RouteScreen = ({ navigation }) => {
       
       setLoading(true);
       // Pass depot location to route service
-      const routeData = await routeService.getOptimizedRoute(null, depotLocation);
+      const routeData = await routeService.getOptimizedRoute(null, currentDepotLocation);
       console.log('🗺️ RouteScreen: Route data received:', routeData);
       setRoute(routeData);
+      
+      // Extract depot information from route data for logging only
+      if (routeData.stops && routeData.stops.length > 0) {
+        const depotStop = routeData.stops.find(stop => 
+          stop.kargo_id === 'DEPOT-START' || stop.kargo_id?.includes('DEPOT')
+        );
+        if (depotStop) {
+          console.log('🏢 Depot found in route data:', {
+            latitude: depotStop.latitude,
+            longitude: depotStop.longitude,
+            address: depotStop.address
+          });
+        }
+      }
       
       if (routeData.stops && routeData.stops.length > 0) {
         // Calculate map region to fit all stops
@@ -312,7 +363,7 @@ const RouteScreen = ({ navigation }) => {
       <View style={styles.statItem}>
         <Ionicons name="time-outline" size={20} color="#F59E0B" />
         <View>
-          <Text style={styles.statValue}>{route?.estimated_duration || 0} min</Text>
+          <Text style={styles.statValue}>{formatDuration(route?.estimated_duration)}</Text>
           <Text style={styles.statLabel}>Duration</Text>
         </View>
       </View>
@@ -568,23 +619,43 @@ const RouteScreen = ({ navigation }) => {
           region={mapRegion}
           mapPadding={{ top: 60, right: 30, bottom: 60, left: 30 }}
         >
-          {/* Depot Marker - Only show if depot location is set */}
-          {depotLocation && (
-            <Marker
-              coordinate={{
-                latitude: depotLocation.latitude,
-                longitude: depotLocation.longitude,
-              }}
-              title={`🏢 DEPOT - ${depotLocation.name || 'Seçilen Depo'}`}
-              description="Starting point - All deliveries begin here"
-              anchor={{ x: 0.5, y: 0.5 }}
-              centerOffset={{ x: 0, y: 0 }}
-            >
-              <View style={styles.simpleDepotMarker}>
-                <Text style={styles.depotLetter}>D</Text>
-              </View>
-            </Marker>
-          )}
+          {/* Depot Marker - From route data or saved location */}
+          {(() => {
+            // First try to get depot from route data
+            const depotFromRoute = route?.stops?.find(stop => 
+              stop.kargo_id === 'DEPOT-START' || stop.kargo_id?.includes('DEPOT')
+            );
+            
+            console.log('🗺️ Depot marker debug:');
+            console.log('  - Route exists:', !!route);
+            console.log('  - Route stops count:', route?.stops?.length || 0);
+            console.log('  - Depot from route:', depotFromRoute);
+            console.log('  - Depot location state:', depotLocation);
+            
+            // Fallback to saved depot location
+            const depotToShow = depotFromRoute || depotLocation;
+            console.log('  - Final depot to show:', depotToShow);
+            
+            if (depotToShow && depotToShow.latitude && depotToShow.longitude) {
+              return (
+                <Marker
+                  coordinate={{
+                    latitude: depotToShow.latitude,
+                    longitude: depotToShow.longitude,
+                  }}
+                  title={`🏢 DEPOT - ${depotToShow.address || depotToShow.name || 'Seçilen Depo'}`}
+                  description="Starting point - All deliveries begin here"
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  centerOffset={{ x: 0, y: 0 }}
+                >
+                  <View style={styles.simpleDepotMarker}>
+                    <Text style={styles.depotLetter}>D</Text>
+                  </View>
+                </Marker>
+              );
+            }
+            return null;
+          })()}
           
           {/* Route Markers */}
           {route.stops

@@ -157,7 +157,17 @@ async def get_optimized_route(
         
         print(f"✅ Google Cloud optimization completed")
         print(f"   Distance: {optimized_result['total_distance_km']:.1f}km")
-        print(f"   Duration: {optimized_result['total_duration_minutes']:.0f}min")
+        duration_min = optimized_result['total_duration_minutes']
+        if duration_min < 60:
+            duration_str = f"{duration_min:.0f}dk"
+        else:
+            hours = int(duration_min // 60)
+            remaining_min = int(duration_min % 60)
+            if remaining_min == 0:
+                duration_str = f"{hours} saat"
+            else:
+                duration_str = f"{hours} saat {remaining_min}dk"
+        print(f"   Duration: {duration_str}")
         
         # Convert Google Cloud result to response format
         optimized_route = {

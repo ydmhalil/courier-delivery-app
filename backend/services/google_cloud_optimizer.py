@@ -110,10 +110,8 @@ class GoogleCloudRouteOptimizer:
         
         packages_with_distance = []
         for pkg in packages:
-            # Calculate distance from depot using Haversine approximation
-            lat_diff = pkg['latitude'] - depot_lat
-            lng_diff = pkg['longitude'] - depot_lng
-            dist = (lat_diff ** 2 + lng_diff ** 2) ** 0.5
+            # Calculate distance from depot using proper Haversine
+            dist = self._calculate_road_distance(depot_lat, depot_lng, pkg['latitude'], pkg['longitude'])
             packages_with_distance.append((dist, pkg))
         
         # Sort by distance and add some optimization logic
@@ -122,16 +120,10 @@ class GoogleCloudRouteOptimizer:
         # Start route optimization with clustering for nearby packages
         prev_lat, prev_lng = depot_lat, depot_lng
         for i, (_, package) in enumerate(packages_with_distance):
-            # Calculate realistic distance between consecutive stops
-            lat_diff = package['latitude'] - prev_lat
-            lng_diff = package['longitude'] - prev_lng
+            # Calculate realistic distance between consecutive stops using Haversine
+            segment_distance = self._calculate_road_distance(prev_lat, prev_lng, 
+                                                           package['latitude'], package['longitude'])
             
-            # Use Haversine approximation for short distances
-            # 1 degree ≈ 111km, but for city delivery use smaller conversion factor
-            segment_distance = ((lat_diff ** 2 + lng_diff ** 2) ** 0.5) * 50  # More realistic city factor
-            
-            # Cap realistic segment distances for city delivery
-            segment_distance = max(0.3, min(segment_distance, 8))  # Between 0.3-8km per segment
             total_distance += segment_distance
             
             stop = {
@@ -166,7 +158,19 @@ class GoogleCloudRouteOptimizer:
             }
         }
         
-        logger.info(f"✅ Fallback optimization: {result['total_distance_km']:.1f}km in {result['total_duration_minutes']:.0f}min")
+        # Format duration for logging
+        duration_min = result['total_duration_minutes']
+        if duration_min < 60:
+            duration_str = f"{duration_min:.0f}dk"
+        else:
+            hours = int(duration_min // 60)
+            remaining_min = int(duration_min % 60)
+            if remaining_min == 0:
+                duration_str = f"{hours} saat"
+            else:
+                duration_str = f"{hours} saat {remaining_min}dk"
+        
+        logger.info(f"✅ Fallback optimization: {result['total_distance_km']:.1f}km in {duration_str}")
         return result
 
     def _google_cloud_simulation(self, packages: List[Dict], depot_location: Dict = None) -> Dict:
@@ -245,7 +249,19 @@ class GoogleCloudRouteOptimizer:
             }
         }
         
-        logger.info(f"✅ Google Cloud simulation: {result['total_distance_km']:.1f}km in {result['total_duration_minutes']:.0f}min")
+        # Format duration for logging
+        duration_min = result['total_duration_minutes']
+        if duration_min < 60:
+            duration_str = f"{duration_min:.0f}dk"
+        else:
+            hours = int(duration_min // 60)
+            remaining_min = int(duration_min % 60)
+            if remaining_min == 0:
+                duration_str = f"{hours} saat"
+            else:
+                duration_str = f"{hours} saat {remaining_min}dk"
+        
+        logger.info(f"✅ Google Cloud simulation: {result['total_distance_km']:.1f}km in {duration_str}")
         return result
 
     def _create_delivery_clusters(self, packages: List[Dict], depot_lat: float, depot_lng: float) -> List[List[Dict]]:
@@ -275,17 +291,36 @@ class GoogleCloudRouteOptimizer:
         return clusters
 
     def _calculate_road_distance(self, lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-        """Calculate more realistic road distance (not just euclidean)"""
+        """Calculate more realistic road distance using Haversine formula"""
         
-        # Simple euclidean with road factor
-        euclidean = ((lat2 - lat1) ** 2 + (lng2 - lng1) ** 2) ** 0.5
+        import math
         
-        # Convert to km with realistic city factor for Istanbul
-        # 1 degree ≈ 111km, but for city delivery use much smaller factor
-        road_distance = euclidean * 25  # Realistic Istanbul city factor
+        # Haversine formula for accurate distance calculation
+        R = 6371  # Earth radius in kilometers
         
-        # Apply realistic bounds for city delivery
-        return max(0.2, min(road_distance, 8))  # 0.2-8km per segment
+        # Convert degrees to radians
+        lat1_rad = math.radians(lat1)
+        lng1_rad = math.radians(lng1)
+        lat2_rad = math.radians(lat2)
+        lng2_rad = math.radians(lng2)
+        
+        # Differences
+        dlat = lat2_rad - lat1_rad
+        dlng = lng2_rad - lng1_rad
+        
+        # Haversine formula
+        a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlng/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+        
+        # Distance in km
+        distance = R * c
+        
+        # Add road factor for actual driving distance (typically 1.3x straight line)
+        road_distance = distance * 1.3
+        
+        print(f"🛣️ Distance calculation: {lat1:.4f},{lng1:.4f} → {lat2:.4f},{lng2:.4f} = {road_distance:.1f}km")
+        
+        return max(0.2, road_distance)  # Minimum 0.2km
 
     def _prepare_optimization_request(self, packages: List[Dict], depot_location: Dict):
         """Prepare optimization request for Google Cloud API"""
