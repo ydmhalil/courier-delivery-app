@@ -100,6 +100,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = async (updatedUserData) => {
+    try {
+      const updatedUser = { ...user, ...updatedUserData };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      console.log('✅ User updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('token');
@@ -121,6 +133,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
   };
 
   return (

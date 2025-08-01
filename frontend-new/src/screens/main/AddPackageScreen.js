@@ -34,7 +34,7 @@ const AddPackageScreen = ({ navigation }) => {
     const { kargo_id, recipient_name, address } = formData;
 
     if (!kargo_id || !recipient_name || !address) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert('Hata', 'Lütfen tüm gerekli alanları doldurun');
       return;
     }
 
@@ -42,17 +42,17 @@ const AddPackageScreen = ({ navigation }) => {
     try {
       const newPackage = await packageService.createPackage(formData);
       Alert.alert(
-        'Success!',
-        `Package ${newPackage.kargo_id} has been added successfully.`,
+        'Başarılı!',
+        `Paket ${newPackage.kargo_id} başarıyla eklendi.`,
         [
           {
-            text: 'View Package',
+            text: 'Paketi Görüntüle',
             onPress: () => {
               navigation.replace('PackageDetail', { packageId: newPackage.id });
             },
           },
           {
-            text: 'Add Another',
+            text: 'Yeni Paket Ekle',
             onPress: () => {
               setFormData({
                 kargo_id: '',
@@ -69,7 +69,7 @@ const AddPackageScreen = ({ navigation }) => {
       );
     } catch (error) {
       console.error('Error creating package:', error);
-      Alert.alert('Error', 'Failed to create package. Please try again.');
+      Alert.alert('Hata', 'Paket oluşturulamadı. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -89,43 +89,43 @@ const AddPackageScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Add New Package</Text>
+          <Text style={styles.headerTitle}>Yeni Paket Ekle</Text>
           <Text style={styles.headerSubtitle}>
-            Enter package details manually
+            Paket detaylarını manuel olarak girin
           </Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Package ID *</Text>
+            <Text style={styles.label}>Paket ID *</Text>
             <TextInput
               style={styles.input}
               value={formData.kargo_id}
               onChangeText={(value) => handleInputChange('kargo_id', value)}
-              placeholder="Enter package ID (e.g., PKT123456)"
+              placeholder="Paket ID girin (örn. PKT123456)"
               autoCapitalize="characters"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Recipient Name *</Text>
+            <Text style={styles.label}>Alıcı Adı *</Text>
             <TextInput
               style={styles.input}
               value={formData.recipient_name}
               onChangeText={(value) => handleInputChange('recipient_name', value)}
-              placeholder="Enter recipient's full name"
+              placeholder="Alıcının tam adını girin"
               autoCapitalize="words"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Address *</Text>
+            <Text style={styles.label}>Adres *</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={formData.address}
               onChangeText={(value) => handleInputChange('address', value)}
-              placeholder="Enter complete delivery address"
+              placeholder="Tam teslimat adresini girin"
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
@@ -133,27 +133,27 @@ const AddPackageScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>Telefon Numarası</Text>
             <TextInput
               style={styles.input}
               value={formData.phone}
               onChangeText={(value) => handleInputChange('phone', value)}
-              placeholder="Enter phone number"
+              placeholder="Telefon numarası girin"
               keyboardType="phone-pad"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Delivery Type *</Text>
+            <Text style={styles.label}>Teslimat Türü *</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.delivery_type}
                 onValueChange={(value) => handleInputChange('delivery_type', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Standard" value="standard" />
-                <Picker.Item label="Express" value="express" />
-                <Picker.Item label="Scheduled" value="scheduled" />
+                <Picker.Item label="Standart" value="standard" />
+                <Picker.Item label="Hızlı" value="express" />
+                <Picker.Item label="Zamanlanmış" value="scheduled" />
               </Picker>
             </View>
           </View>
@@ -161,7 +161,7 @@ const AddPackageScreen = ({ navigation }) => {
           {formData.delivery_type === 'scheduled' && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Start Time (HH:MM)</Text>
+                <Text style={styles.label}>Başlangıç Saati (SS:DD)</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.time_window_start}
@@ -172,7 +172,7 @@ const AddPackageScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>End Time (HH:MM)</Text>
+                <Text style={styles.label}>Bitiş Saati (SS:DD)</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.time_window_end}
@@ -188,15 +188,15 @@ const AddPackageScreen = ({ navigation }) => {
           <View style={styles.infoBox}>
             <Ionicons name="information-circle-outline" size={20} color="#3B82F6" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>Delivery Types:</Text>
+              <Text style={styles.infoTitle}>Teslimat Türleri:</Text>
               <Text style={styles.infoText}>
-                • <Text style={{ color: '#EF4444' }}>Express</Text>: High priority delivery
+                • <Text style={{ color: '#EF4444' }}>Hızlı</Text>: Yüksek öncelikli teslimat
               </Text>
               <Text style={styles.infoText}>
-                • <Text style={{ color: '#F59E0B' }}>Scheduled</Text>: Delivery within time window
+                • <Text style={{ color: '#F59E0B' }}>Zamanlanmış</Text>: Belirtilen saat aralığında teslimat
               </Text>
               <Text style={styles.infoText}>
-                • <Text style={{ color: '#10B981' }}>Standard</Text>: Normal delivery
+                • <Text style={{ color: '#10B981' }}>Standart</Text>: Normal teslimat
               </Text>
             </View>
           </View>
@@ -207,11 +207,11 @@ const AddPackageScreen = ({ navigation }) => {
             disabled={loading}
           >
             {loading ? (
-              <Text style={styles.submitButtonText}>Adding Package...</Text>
+              <Text style={styles.submitButtonText}>Paket Ekleniyor...</Text>
             ) : (
               <>
                 <Ionicons name="add-outline" size={20} color="white" />
-                <Text style={styles.submitButtonText}>Add Package</Text>
+                <Text style={styles.submitButtonText}>Paket Ekle</Text>
               </>
             )}
           </TouchableOpacity>
@@ -221,7 +221,7 @@ const AddPackageScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('QRScanner')}
           >
             <Ionicons name="qr-code-outline" size={20} color="#3B82F6" />
-            <Text style={styles.scanButtonText}>Or Scan QR Code</Text>
+            <Text style={styles.scanButtonText}>Veya QR Kod Tara</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -150,24 +150,17 @@ const PackageListScreen = ({ navigation }) => {
   const EmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="cube-outline" size={64} color="#D1D5DB" />
-      <Text style={styles.emptyTitle}>No packages found</Text>
+      <Text style={styles.emptyTitle}>Henüz paket bulunamadı</Text>
       <Text style={styles.emptySubtitle}>
-        Start by scanning a QR code or adding a package manually
+        QR kod tarayarak veya manuel olarak paket ekleyerek başlayın
       </Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('QRScanner')}
-      >
-        <Ionicons name="qr-code-outline" size={20} color="white" />
-        <Text style={styles.addButtonText}>Scan QR Code</Text>
-      </TouchableOpacity>
     </View>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Packages</Text>
+        <Text style={styles.headerTitle}>Paketler</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerButton}
@@ -324,20 +317,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

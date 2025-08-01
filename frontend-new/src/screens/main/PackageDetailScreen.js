@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { packageService } from '../../services/packageService';
@@ -41,7 +42,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
       setPackageData(data);
     } catch (error) {
       console.error('Error loading package details:', error);
-      Alert.alert('Error', 'Failed to load package details');
+      Alert.alert('Hata', 'Paket detayları yüklenemedi');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -50,20 +51,20 @@ const PackageDetailScreen = ({ route, navigation }) => {
 
   const handleDeletePackage = () => {
     Alert.alert(
-      'Delete Package',
-      'Are you sure you want to delete this package?',
+      'Paketi Sil',
+      'Bu paketi silmek istediğinizden emin misiniz?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'İptal', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Sil',
           style: 'destructive',
           onPress: async () => {
             try {
               await packageService.deletePackage(packageId);
-              Alert.alert('Success', 'Package deleted successfully');
+              Alert.alert('Başarılı', 'Paket başarıyla silindi');
               navigation.goBack();
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete package');
+              Alert.alert('Hata', 'Paket silinemedi');
             }
           },
         },
@@ -161,6 +162,57 @@ const PackageDetailScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleGetDirections = () => {
+    if (packageData?.address) {
+      // Adresi URL encode ediyoruz
+      const encodedAddress = encodeURIComponent(packageData.address);
+      
+      // Platform'a göre harita uygulaması seçimi
+      Alert.alert(
+        'Yol Tarifi',
+        'Hangi harita uygulamasını kullanmak istiyorsunuz?',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { 
+            text: 'Google Maps', 
+            onPress: () => {
+              const googleMapsUrl = Platform.OS === 'ios' 
+                ? `comgooglemaps://?daddr=${encodedAddress}&directionsmode=driving`
+                : `google.navigation:q=${encodedAddress}&mode=d`;
+              
+              Linking.canOpenURL(googleMapsUrl).then(supported => {
+                if (supported) {
+                  Linking.openURL(googleMapsUrl);
+                } else {
+                  // Fallback to web version
+                  const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+                  Linking.openURL(webUrl);
+                }
+              }).catch(() => {
+                Alert.alert('Hata', 'Harita uygulaması açılamadı');
+              });
+            }
+          },
+          { 
+            text: 'Apple Maps (iOS)', 
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                const appleMapsUrl = `http://maps.apple.com/?daddr=${encodedAddress}&dirflg=d`;
+                Linking.openURL(appleMapsUrl).catch(() => {
+                  Alert.alert('Hata', 'Apple Maps açılamadı');
+                });
+              } else {
+                Alert.alert('Bilgi', 'Apple Maps sadece iOS cihazlarda kullanılabilir');
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert('Hata', 'Adres bilgisi bulunamadı');
+    }
+  };
+
   const getDeliveryTypeColor = (type) => {
     switch (type) {
       case 'express':
@@ -197,11 +249,11 @@ const PackageDetailScreen = ({ route, navigation }) => {
   const getDeliveryTypeText = (type) => {
     switch (type) {
       case 'express':
-        return 'Ekspres';
+        return 'EKSPRES';
       case 'scheduled':
-        return 'Programlı';
+        return 'ZAMANLANMIŞ';
       case 'standard':
-        return 'Standart';
+        return 'STANDART';
       default:
         return type;
     }
@@ -210,7 +262,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading package details...</Text>
+        <Text style={styles.loadingText}>Paket detayları yükleniyor...</Text>
       </View>
     );
   }
@@ -218,7 +270,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
   if (!packageData) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Package not found</Text>
+        <Text style={styles.errorText}>Paket bulunamadı</Text>
       </View>
     );
   }
@@ -252,12 +304,12 @@ const PackageDetailScreen = ({ route, navigation }) => {
 
       {/* Package Information */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Package Information</Text>
+        <Text style={styles.sectionTitle}>Paket Bilgileri</Text>
         
         <View style={styles.infoRow}>
           <Ionicons name="person-outline" size={20} color="#6B7280" />
           <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Recipient</Text>
+            <Text style={styles.infoLabel}>Alıcı</Text>
             <Text style={styles.infoValue}>{packageData.recipient_name}</Text>
           </View>
         </View>
@@ -265,7 +317,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={20} color="#6B7280" />
           <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Address</Text>
+            <Text style={styles.infoLabel}>Adres</Text>
             <Text style={styles.infoValue}>{packageData.address}</Text>
           </View>
         </View>
@@ -274,7 +326,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
           <View style={styles.infoRow}>
             <Ionicons name="call-outline" size={20} color="#6B7280" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoLabel}>Telefon</Text>
               <Text style={styles.infoValue}>{packageData.phone}</Text>
             </View>
           </View>
@@ -284,7 +336,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
           <View style={styles.infoRow}>
             <Ionicons name="time-outline" size={20} color="#6B7280" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Time Window</Text>
+              <Text style={styles.infoLabel}>Zaman Aralığı</Text>
               <Text style={styles.infoValue}>
                 {packageData.time_window_start} - {packageData.time_window_end}
               </Text>
@@ -295,7 +347,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
         <View style={styles.infoRow}>
           <Ionicons name="calendar-outline" size={20} color="#6B7280" />
           <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Created At</Text>
+            <Text style={styles.infoLabel}>Oluşturulma Tarihi</Text>
             <Text style={styles.infoValue}>
               {new Date(packageData.created_at).toLocaleDateString()} {' '}
               {new Date(packageData.created_at).toLocaleTimeString()}
@@ -307,7 +359,7 @@ const PackageDetailScreen = ({ route, navigation }) => {
           <View style={styles.infoRow}>
             <Ionicons name="checkmark-circle-outline" size={20} color="#6B7280" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Delivered At</Text>
+              <Text style={styles.infoLabel}>Teslim Edilme Tarihi</Text>
               <Text style={styles.infoValue}>
                 {new Date(packageData.delivered_at).toLocaleDateString()} {' '}
                 {new Date(packageData.delivered_at).toLocaleTimeString()}
@@ -399,7 +451,10 @@ const PackageDetailScreen = ({ route, navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#6B7280" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={handleGetDirections}
+        >
           <Ionicons name="navigate-outline" size={20} color="#3B82F6" />
           <Text style={styles.actionButtonText}>Yol Tarifi Al</Text>
           <Ionicons name="chevron-forward" size={20} color="#6B7280" />

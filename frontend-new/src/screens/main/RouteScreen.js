@@ -33,6 +33,22 @@ const formatDuration = (minutes) => {
   }
 };
 
+// Delivery type için Türkçe label fonksiyonu
+const getDeliveryTypeLabel = (deliveryType) => {
+  switch (deliveryType?.toLowerCase()) {
+    case 'express':
+      return 'EKSPRES';
+    case 'scheduled':
+      return 'ZAMANLANMIŞ';
+    case 'standard':
+      return 'STANDART';
+    case 'depot':
+      return 'DEPO';
+    default:
+      return deliveryType?.toUpperCase() || 'BİLİNMEYEN';
+  }
+};
+
 const RouteScreen = ({ navigation }) => {
   const { user, authLoading } = useAuth();
   const [route, setRoute] = useState(null);
@@ -347,8 +363,8 @@ const RouteScreen = ({ navigation }) => {
       <View style={styles.statItem}>
         <Ionicons name="location-outline" size={20} color="#3B82F6" />
         <View>
-          <Text style={styles.statValue}>{route?.stops?.length || 0}</Text>
-          <Text style={styles.statLabel}>Stops</Text>
+          <Text style={styles.statValue}>{route?.stops?.filter(stop => !(stop.kargo_id === 'DEPOT' || stop.kargo_id?.includes('DEPOT'))).length || 0}</Text>
+          <Text style={styles.statLabel}>Durak</Text>
         </View>
       </View>
       
@@ -356,7 +372,7 @@ const RouteScreen = ({ navigation }) => {
         <Ionicons name="car-outline" size={20} color="#10B981" />
         <View>
           <Text style={styles.statValue}>{route?.total_distance?.toFixed(1) || 0} km</Text>
-          <Text style={styles.statLabel}>Distance</Text>
+          <Text style={styles.statLabel}>Mesafe</Text>
         </View>
       </View>
       
@@ -364,7 +380,7 @@ const RouteScreen = ({ navigation }) => {
         <Ionicons name="time-outline" size={20} color="#F59E0B" />
         <View>
           <Text style={styles.statValue}>{formatDuration(route?.estimated_duration)}</Text>
-          <Text style={styles.statLabel}>Duration</Text>
+          <Text style={styles.statLabel}>Süre</Text>
         </View>
       </View>
     </View>
@@ -480,7 +496,7 @@ const RouteScreen = ({ navigation }) => {
                 color="white" 
               />
               <Text style={styles.deliveryTypeText}>
-                {stop.delivery_type?.toUpperCase()}
+                {getDeliveryTypeLabel(stop.delivery_type)}
               </Text>
             </View>
           )}
@@ -668,7 +684,7 @@ const RouteScreen = ({ navigation }) => {
                 longitude: stop.longitude,
               }}
               title={`${index + 1}. ${stop.kargo_id}`}
-              description={`${stop.recipient_name} - ${stop.delivery_type?.toUpperCase()} - Durum: ${stop.status || 'pending'}`}
+              description={`${stop.recipient_name} - ${getDeliveryTypeLabel(stop.delivery_type)} - Durum: ${stop.status || 'pending'}`}
               anchor={{ x: 0.5, y: 0.5 }}
               centerOffset={{ x: 0, y: 0 }}
             >
@@ -738,7 +754,7 @@ const RouteScreen = ({ navigation }) => {
       {/* Modern Stops List */}
       <ScrollView style={styles.stopsContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.stopsHeader}>
-          <Text style={styles.stopsTitle}>📦 Teslimat Rotası ({route.stops.length})</Text>
+          <Text style={styles.stopsTitle}>📦 Teslimat Rotası ({route.stops.filter(stop => !(stop.kargo_id === 'DEPOT' || stop.kargo_id?.includes('DEPOT'))).length})</Text>
           <Text style={styles.stopsSubtitle}>Haritada görmek için kartlara tıklayın</Text>
         </View>
         {route.stops

@@ -174,11 +174,11 @@ const DashboardScreen = ({ navigation }) => {
   const getDeliveryTypeText = (type) => {
     switch (type) {
       case 'express':
-        return 'Ekspres';
+        return 'EKSPRES';
       case 'scheduled':
-        return 'Programlı';
+        return 'ZAMANLANMIŞ';
       case 'standard':
-        return 'Standart';
+        return 'STANDART';
       default:
         return type;
     }
@@ -270,7 +270,7 @@ const DashboardScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Günaydın,</Text>
+          <Text style={styles.greeting}>Merhaba,</Text>
           <Text style={styles.userName}>{user?.full_name || 'Kurye'}</Text>
         </View>
         <TouchableOpacity style={styles.notificationButton}>
@@ -289,19 +289,19 @@ const DashboardScreen = ({ navigation }) => {
             icon="cube-outline"
           />
           <StatCard
-            title="Express"
+            title="Ekspres"
             value={stats.express}
             color="#EF4444"
             icon="flash-outline"
           />
           <StatCard
-            title="Scheduled"
+            title="Zamanlanmış"
             value={stats.scheduled}
             color="#F59E0B"
             icon="time-outline"
           />
           <StatCard
-            title="Standard"
+            title="Standart"
             value={stats.standard}
             color="#10B981"
             icon="checkmark-outline"
@@ -377,7 +377,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Packages', { screen: 'AddPackage' })}
           />
           <QuickAction
-            title="View Packages"
+            title="Paketleri Görüntüle"
             icon="list-outline"
             color="#F59E0B"
             onPress={() => navigation.navigate('Packages', { screen: 'PackageList' })}
@@ -385,12 +385,12 @@ const DashboardScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Recent Packages */}
+      {/* Son Paketler */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Packages</Text>
+          <Text style={styles.sectionTitle}>Son Paketler</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Packages', { screen: 'PackageList' })}>
-            <Text style={styles.seeAllText}>See All</Text>
+            <Text style={styles.seeAllText}>Tümünü Gör</Text>
           </TouchableOpacity>
         </View>
         

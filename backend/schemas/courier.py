@@ -17,6 +17,22 @@ class CourierCreate(CourierBase):
             raise ValueError('Şifre en az 6 karakter olmalıdır')
         return v
 
+class CourierUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Yeni şifre en az 6 karakter olmalıdır')
+        return v
+
 class CourierLogin(BaseModel):
     email: EmailStr
     password: str

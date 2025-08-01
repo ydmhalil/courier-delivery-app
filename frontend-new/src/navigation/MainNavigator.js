@@ -10,6 +10,9 @@ import RouteScreen from '../screens/main/RouteScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import PackageDetailScreen from '../screens/main/PackageDetailScreen';
 import AddPackageScreen from '../screens/main/AddPackageScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import NotificationSettingsScreen from '../screens/profile/NotificationSettingsScreen';
+import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -20,22 +23,22 @@ const PackageStack = () => {
       <Stack.Screen 
         name="PackageList" 
         component={PackageListScreen}
-        options={{ title: 'Packages' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="PackageDetail" 
         component={PackageDetailScreen}
-        options={{ title: 'Package Details' }}
+        options={{ title: 'Paket Detayları' }}
       />
       <Stack.Screen 
         name="AddPackage" 
         component={AddPackageScreen}
-        options={{ title: 'Add Package' }}
+        options={{ title: 'Paket Ekle' }}
       />
       <Stack.Screen 
         name="QRScanner" 
         component={QRScannerScreen}
-        options={{ title: 'Scan QR Code' }}
+        options={{ title: 'QR Kod Tara' }}
       />
     </Stack.Navigator>
   );
@@ -52,7 +55,34 @@ const RouteStack = () => {
       <Stack.Screen 
         name="PackageDetail" 
         component={PackageDetailScreen}
-        options={{ title: 'Package Details' }}
+        options={{ title: 'Paket Detayları' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const ProfileStack = () => {
+  return (
+    <Stack.Navigator initialRouteName="ProfileMain">
+      <Stack.Screen 
+        name="ProfileMain" 
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="NotificationSettings" 
+        component={NotificationSettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ChangePassword" 
+        component={ChangePasswordScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -82,10 +112,26 @@ const MainNavigator = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Packages" component={PackageStack} />
-      <Tab.Screen name="Routes" component={RouteStack} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={DashboardScreen}
+        options={{ title: 'Ana Sayfa' }}
+      />
+      <Tab.Screen 
+        name="Packages" 
+        component={PackageStack}
+        options={{ title: 'Paketler' }}
+      />
+      <Tab.Screen 
+        name="Routes" 
+        component={RouteStack}
+        options={{ title: 'Rotalar' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileStack}
+        options={{ title: 'Profil' }}
+      />
     </Tab.Navigator>
   );
 };

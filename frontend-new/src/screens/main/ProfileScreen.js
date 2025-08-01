@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import LocationSelectorModal from '../../components/LocationSelectorModal';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
   const [defaultDepot, setDefaultDepot] = useState(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
@@ -55,12 +55,12 @@ const ProfileScreen = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Çıkış Yap',
+      'Çıkış yapmak istediğinizden emin misiniz?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'İptal', style: 'cancel' },
         { 
-          text: 'Logout', 
+          text: 'Çıkış Yap', 
           style: 'destructive',
           onPress: logout
         },
@@ -90,7 +90,7 @@ const ProfileScreen = () => {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>Profil</Text>
       </View>
 
       {/* User Info */}
@@ -109,7 +109,7 @@ const ProfileScreen = () => {
 
       {/* Profile Options */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
+        <Text style={styles.sectionTitle}>Hesap Ayarları</Text>
         
         <ProfileItem
           icon="business-outline"
@@ -120,100 +120,91 @@ const ProfileScreen = () => {
         
         <ProfileItem
           icon="person-outline"
-          title="Edit Profile"
-          subtitle="Update your personal information"
-          onPress={() => {
-            // TODO: Navigate to edit profile
-            Alert.alert('Coming Soon', 'Profile editing will be available soon');
-          }}
+          title="Profili Düzenle"
+          subtitle="Kişisel bilgilerinizi güncelleyin"
+          onPress={() => navigation.navigate('EditProfile')}
         />
         
         <ProfileItem
           icon="notifications-outline"
-          title="Notifications"
-          subtitle="Manage notification preferences"
-          onPress={() => {
-            // TODO: Navigate to notifications settings
-            Alert.alert('Coming Soon', 'Notification settings will be available soon');
-          }}
+          title="Bildirimler"
+          subtitle="Bildirim tercihlerinizi yönetin"
+          onPress={() => navigation.navigate('NotificationSettings')}
         />
         
         <ProfileItem
           icon="lock-closed-outline"
-          title="Change Password"
-          subtitle="Update your password"
-          onPress={() => {
-            // TODO: Navigate to change password
-            Alert.alert('Coming Soon', 'Password change will be available soon');
-          }}
+          title="Şifre Değiştir"
+          subtitle="Şifrenizi güncelleyin"
+          onPress={() => navigation.navigate('ChangePassword')}
         />
       </View>
 
       {/* App Settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Settings</Text>
+        <Text style={styles.sectionTitle}>Uygulama Ayarları</Text>
         
         <ProfileItem
           icon="language-outline"
-          title="Language"
-          subtitle="English"
+          title="Dil"
+          subtitle="Türkçe"
           onPress={() => {
             // TODO: Navigate to language settings
-            Alert.alert('Coming Soon', 'Language settings will be available soon');
+            Alert.alert('Yakında', 'Dil ayarları yakında gelecek');
           }}
         />
         
         <ProfileItem
           icon="color-palette-outline"
-          title="Theme"
-          subtitle="Light mode"
+          title="Tema"
+          subtitle="Açık mod"
           onPress={() => {
             // TODO: Navigate to theme settings
-            Alert.alert('Coming Soon', 'Theme settings will be available soon');
+            Alert.alert('Yakında', 'Tema ayarları yakında gelecek');
           }}
         />
         
         <ProfileItem
           icon="location-outline"
-          title="Location Services"
-          subtitle="Enabled"
+          title="Konum Servisleri"
+          subtitle="Etkin"
           onPress={() => {
             // TODO: Navigate to location settings
-            Alert.alert('Coming Soon', 'Location settings will be available soon');
+            Alert.alert('Yakında', 'Konum ayarları yakında gelecek');
           }}
         />
       </View>
 
       {/* Support */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support</Text>
+        <Text style={styles.sectionTitle}>Destek</Text>
         
         <ProfileItem
           icon="help-circle-outline"
-          title="Help & FAQ"
-          subtitle="Get help and find answers"
+          title="Yardım & SSS"
+          subtitle="Yardım alın ve cevapları bulun"
           onPress={() => {
-            Alert.alert('Coming Soon', 'Help section will be available soon');
+            Alert.alert('Yakında', 'Yardım bölümü yakında gelecek');
           }}
         />
         
         <ProfileItem
           icon="mail-outline"
-          title="Contact Support"
-          subtitle="Get in touch with our team"
+          title="Destek İletişim"
+          subtitle="Ekibimizle iletişime geçin"
           onPress={() => {
-            Alert.alert('Coming Soon', 'Contact support will be available soon');
+            Alert.alert('Yakında', 'Destek iletişimi yakında gelecek');
           }}
         />
         
         <ProfileItem
           icon="information-circle-outline"
-          title="About"
-          subtitle="App version 1.0.0"
+          title="Hakkında"
+          subtitle="Uygulama sürümü 1.0.0"
           onPress={() => {
             Alert.alert(
-              'About Courier Delivery App',
-              'Version 1.0.0\n\nAI-powered route optimization and package management for couriers.'
+              'Kurye Teslimat Uygulaması Hakkında',
+              'Sürüm 1.0.0\n\nKuryeler için AI destekli rota optimizasyonu ve paket yönetimi.'
             );
           }}
         />
@@ -223,7 +214,7 @@ const ProfileScreen = () => {
       <View style={styles.section}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Çıkış Yap</Text>
         </TouchableOpacity>
       </View>
 

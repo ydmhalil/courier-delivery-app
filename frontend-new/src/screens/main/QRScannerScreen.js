@@ -103,7 +103,7 @@ const QRScannerScreen = ({ navigation }) => {
   if (hasPermission === null) {
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>Requesting camera permission...</Text>
+        <Text style={styles.message}>Kamera izni isteniyor...</Text>
       </View>
     );
   }
@@ -113,12 +113,12 @@ const QRScannerScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color="#6B7280" />
-          <Text style={styles.permissionTitle}>Camera Permission Required</Text>
+          <Text style={styles.permissionTitle}>Kamera İzni Gerekli</Text>
           <Text style={styles.permissionMessage}>
-            Please grant camera permission to scan QR codes for package information.
+            Paket bilgileri için QR kod tarayabilmek için lütfen kamera iznini verin.
           </Text>
           <TouchableOpacity style={styles.permissionButton} onPress={getPermissions}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={styles.permissionButtonText}>İzin Ver</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -143,7 +143,7 @@ const QRScannerScreen = ({ navigation }) => {
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Scan QR Code</Text>
+            <Text style={styles.headerTitle}>QR Kod Tara</Text>
             <View style={styles.placeholder} />
           </View>
 
@@ -157,12 +157,12 @@ const QRScannerScreen = ({ navigation }) => {
             </View>
             
             <Text style={styles.instructionText}>
-              Position the QR code within the frame
+              QR kodu çerçeve içine hizalayın
             </Text>
             
             {loading && (
               <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Processing...</Text>
+                <Text style={styles.loadingText}>İşleniyor...</Text>
               </View>
             )}
           </View>
@@ -175,7 +175,7 @@ const QRScannerScreen = ({ navigation }) => {
                 onPress={resetScanner}
               >
                 <Ionicons name="refresh" size={20} color="white" />
-                <Text style={styles.rescanButtonText}>Scan Again</Text>
+                <Text style={styles.rescanButtonText}>Tekrar Tara</Text>
               </TouchableOpacity>
             )}
             
@@ -184,7 +184,7 @@ const QRScannerScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('AddPackage')}
             >
               <Ionicons name="create-outline" size={20} color="white" />
-              <Text style={styles.manualButtonText}>Add Manually</Text>
+              <Text style={styles.manualButtonText}>Manuel Ekle</Text>
             </TouchableOpacity>
           </View>
         </View>
