@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 
 from database import engine, SessionLocal, Base, get_db
-from routers import auth, packages, routes
+from routers import auth, packages, routes, chatbot
 from models import courier, package, delivery_route
 
 # Load environment variables
@@ -38,6 +38,7 @@ security = HTTPBearer()
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(packages.router, prefix="/api/packages", tags=["Packages"])
 app.include_router(routes.router, prefix="/api/routes", tags=["Routes"])
+app.include_router(chatbot.router, prefix="/api/chatbot", tags=["AI Chatbot"])
 
 @app.get("/")
 async def root():

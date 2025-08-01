@@ -10,6 +10,7 @@ import RouteScreen from '../screens/main/RouteScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import PackageDetailScreen from '../screens/main/PackageDetailScreen';
 import AddPackageScreen from '../screens/main/AddPackageScreen';
+import ChatbotScreen from '../screens/main/ChatbotScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import NotificationSettingsScreen from '../screens/profile/NotificationSettingsScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
@@ -101,6 +102,8 @@ const MainNavigator = () => {
             iconName = focused ? 'cube' : 'cube-outline';
           } else if (route.name === 'Routes') {
             iconName = focused ? 'map' : 'map-outline';
+          } else if (route.name === 'Chatbot') {
+            iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -126,6 +129,11 @@ const MainNavigator = () => {
         name="Routes" 
         component={RouteStack}
         options={{ title: 'Rotalar' }}
+      />
+      <Tab.Screen 
+        name="Chatbot" 
+        component={ChatbotScreen}
+        options={{ title: 'AI Asistan' }}
       />
       <Tab.Screen 
         name="Profile" 
