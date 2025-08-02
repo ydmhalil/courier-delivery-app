@@ -9,12 +9,22 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { packageService } from '../../services/packageService';
+import AppTheme from '../../theme/AppTheme';
+import { ModernHeader, ModernCard, ModernButton, ModernInput } from '../../components/ModernComponents';
 
 const AddPackageScreen = ({ navigation }) => {
+  // Navigation options'ı ayarla - header'ı gizle
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
   const [formData, setFormData] = useState({
     kargo_id: '',
     recipient_name: '',
@@ -82,269 +92,249 @@ const AddPackageScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Yeni Paket Ekle</Text>
-          <Text style={styles.headerSubtitle}>
-            Paket detaylarını manuel olarak girin
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#6B73FF" />
+      
+      {/* Modern Header */}
+      <ModernHeader
+        title="Yeni Paket Ekle"
+        subtitle="Paket detaylarını manuel olarak girin"
+        leftIcon="arrow-back-outline"
+        onLeftPress={() => navigation.goBack()}
+      />
 
-        {/* Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Paket ID *</Text>
-            <TextInput
-              style={styles.input}
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          style={styles.scrollContainer} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Form Card */}
+          <ModernCard style={styles.formCard}>
+            <ModernInput
+              label="Paket ID *"
               value={formData.kargo_id}
               onChangeText={(value) => handleInputChange('kargo_id', value)}
               placeholder="Paket ID girin (örn. PKT123456)"
               autoCapitalize="characters"
+              icon="cube-outline"
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Alıcı Adı *</Text>
-            <TextInput
-              style={styles.input}
+            <ModernInput
+              label="Alıcı Adı *"
               value={formData.recipient_name}
               onChangeText={(value) => handleInputChange('recipient_name', value)}
               placeholder="Alıcının tam adını girin"
               autoCapitalize="words"
+              icon="person-outline"
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Adres *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
+            <ModernInput
+              label="Adres *"
               value={formData.address}
               onChangeText={(value) => handleInputChange('address', value)}
               placeholder="Tam teslimat adresini girin"
               multiline={true}
               numberOfLines={3}
-              textAlignVertical="top"
+              icon="location-outline"
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Telefon Numarası</Text>
-            <TextInput
-              style={styles.input}
+            <ModernInput
+              label="Telefon Numarası"
               value={formData.phone}
               onChangeText={(value) => handleInputChange('phone', value)}
-              placeholder="Telefon numarası girin"
+              placeholder="0555 123 45 67"
               keyboardType="phone-pad"
+              icon="call-outline"
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Teslimat Türü *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.delivery_type}
-                onValueChange={(value) => handleInputChange('delivery_type', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Standart" value="standard" />
-                <Picker.Item label="Hızlı" value="express" />
-                <Picker.Item label="Zamanlanmış" value="scheduled" />
-              </Picker>
+            {/* Delivery Type Picker */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Teslimat Türü *</Text>
+              <View style={styles.pickerContainer}>
+                <Ionicons 
+                  name="time-outline" 
+                  size={20} 
+                  color={AppTheme.colors.text.tertiary}
+                  style={styles.pickerIcon}
+                />
+                <Picker
+                  selectedValue={formData.delivery_type}
+                  onValueChange={(value) => handleInputChange('delivery_type', value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Standart" value="standard" />
+                  <Picker.Item label="Hızlı" value="express" />
+                  <Picker.Item label="Zamanlanmış" value="scheduled" />
+                </Picker>
+              </View>
             </View>
-          </View>
 
-          {formData.delivery_type === 'scheduled' && (
-            <>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Başlangıç Saati (SS:DD)</Text>
-                <TextInput
-                  style={styles.input}
+            {/* Time Window for Scheduled Delivery */}
+            {formData.delivery_type === 'scheduled' && (
+              <>
+                <ModernInput
+                  label="Başlangıç Saati (SS:DD)"
                   value={formData.time_window_start}
                   onChangeText={(value) => handleInputChange('time_window_start', value)}
                   placeholder="08:00"
                   keyboardType="numeric"
+                  icon="time-outline"
                 />
-              </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Bitiş Saati (SS:DD)</Text>
-                <TextInput
-                  style={styles.input}
+                <ModernInput
+                  label="Bitiş Saati (SS:DD)"
                   value={formData.time_window_end}
                   onChangeText={(value) => handleInputChange('time_window_end', value)}
                   placeholder="18:00"
                   keyboardType="numeric"
+                  icon="time-outline"
                 />
-              </View>
-            </>
-          )}
-
-          {/* Delivery Type Info */}
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color="#3B82F6" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>Teslimat Türleri:</Text>
-              <Text style={styles.infoText}>
-                • <Text style={{ color: '#EF4444' }}>Hızlı</Text>: Yüksek öncelikli teslimat
-              </Text>
-              <Text style={styles.infoText}>
-                • <Text style={{ color: '#F59E0B' }}>Zamanlanmış</Text>: Belirtilen saat aralığında teslimat
-              </Text>
-              <Text style={styles.infoText}>
-                • <Text style={{ color: '#10B981' }}>Standart</Text>: Normal teslimat
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <Text style={styles.submitButtonText}>Paket Ekleniyor...</Text>
-            ) : (
-              <>
-                <Ionicons name="add-outline" size={20} color="white" />
-                <Text style={styles.submitButtonText}>Paket Ekle</Text>
               </>
             )}
-          </TouchableOpacity>
 
+            {/* Delivery Type Info */}
+            <View style={styles.infoBox}>
+              <Ionicons 
+                name="information-circle-outline" 
+                size={20} 
+                color={AppTheme.colors.primary} 
+              />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoTitle}>Teslimat Türleri:</Text>
+                <Text style={styles.infoText}>
+                  • <Text style={{ color: '#EF4444', fontWeight: '600' }}>Hızlı</Text>: Yüksek öncelikli teslimat
+                </Text>
+                <Text style={styles.infoText}>
+                  • <Text style={{ color: '#F59E0B', fontWeight: '600' }}>Zamanlanmış</Text>: Belirtilen saat aralığında teslimat
+                </Text>
+                <Text style={styles.infoText}>
+                  • <Text style={{ color: '#10B981', fontWeight: '600' }}>Standart</Text>: Normal teslimat
+                </Text>
+              </View>
+            </View>
+          </ModernCard>
+
+          {/* Submit Button */}
+          <ModernButton
+            title={loading ? "Paket Ekleniyor..." : "Paket Ekle"}
+            onPress={handleSubmit}
+            disabled={loading}
+            loading={loading}
+            style={styles.submitButton}
+            icon="add-outline"
+          />
+
+          {/* Alternative QR Scanner */}
           <TouchableOpacity
-            style={styles.scanButton}
+            style={styles.alternativeButton}
             onPress={() => navigation.navigate('QRScanner')}
           >
-            <Ionicons name="qr-code-outline" size={20} color="#3B82F6" />
-            <Text style={styles.scanButtonText}>Veya QR Kod Tara</Text>
+            <Ionicons 
+              name="qr-code-outline" 
+              size={20} 
+              color={AppTheme.colors.primary} 
+            />
+            <Text style={styles.alternativeButtonText}>Veya QR Kod Tara</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: AppTheme.colors.background,
+  },
+  content: {
+    flex: 1,
   },
   scrollContainer: {
     flex: 1,
   },
-  header: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+  scrollContent: {
+    padding: AppTheme.spacing.md,
+    paddingBottom: 40,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  form: {
-    padding: 20,
+  formCard: {
+    marginBottom: AppTheme.spacing.lg,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: AppTheme.spacing.lg,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-    color: '#1F2937',
-  },
-  textArea: {
-    height: 80,
-    paddingTop: 12,
+    color: AppTheme.colors.text.secondary,
+    marginBottom: AppTheme.spacing.sm,
   },
   pickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    backgroundColor: 'white',
-    overflow: 'hidden',
+    borderColor: AppTheme.colors.border,
+    borderRadius: AppTheme.spacing.md,
+    backgroundColor: AppTheme.colors.surface,
+    paddingLeft: AppTheme.spacing.md,
+    marginTop: AppTheme.spacing.sm,
+  },
+  pickerIcon: {
+    marginRight: AppTheme.spacing.sm,
   },
   picker: {
+    flex: 1,
     height: 50,
+    color: AppTheme.colors.text.primary,
   },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: '#EBF4FF',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 24,
+    padding: AppTheme.spacing.lg,
+    borderRadius: AppTheme.spacing.md,
+    marginTop: AppTheme.spacing.lg,
     borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
+    borderLeftColor: AppTheme.colors.primary,
   },
   infoContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: AppTheme.spacing.md,
   },
   infoTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: AppTheme.colors.text.primary,
+    marginBottom: AppTheme.spacing.sm,
   },
   infoText: {
     fontSize: 13,
-    color: '#374151',
+    color: AppTheme.colors.text.secondary,
+    lineHeight: 18,
     marginBottom: 2,
   },
   submitButton: {
+    marginTop: AppTheme.spacing.lg,
+    marginBottom: AppTheme.spacing.md,
+  },
+  alternativeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3B82F6',
-    paddingVertical: 16,
-    borderRadius: 8,
-    gap: 8,
-    marginBottom: 12,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    paddingVertical: 16,
-    borderRadius: 8,
+    paddingVertical: AppTheme.spacing.lg,
+    borderRadius: AppTheme.spacing.md,
     borderWidth: 1,
-    borderColor: '#3B82F6',
-    gap: 8,
+    borderColor: AppTheme.colors.primary,
+    backgroundColor: 'transparent',
+    gap: AppTheme.spacing.sm,
   },
-  scanButtonText: {
-    color: '#3B82F6',
+  alternativeButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: AppTheme.colors.primary,
   },
 });
 

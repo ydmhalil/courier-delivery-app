@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { packageService } from '../../services/packageService';
+import AppTheme from '../../theme/AppTheme';
+import { ModernHeader, ModernCard, ModernBadge } from '../../components/ModernComponents';
 
 const PackageListScreen = ({ navigation }) => {
   const { loading: authLoading } = useAuth();
@@ -100,50 +103,46 @@ const PackageListScreen = ({ navigation }) => {
 
   const PackageItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.packageCard}
       onPress={() => navigation.navigate('PackageDetail', { packageId: item.id })}
     >
-      <View style={styles.packageHeader}>
-        <View style={styles.packageInfo}>
-          <Text style={styles.packageId}>{item.kargo_id}</Text>
-          <Text style={styles.recipientName}>{item.recipient_name}</Text>
-        </View>
-        <View style={styles.badges}>
-          <View
-            style={[
-              styles.typeBadge,
-              { backgroundColor: getDeliveryTypeColor(item.delivery_type) },
-            ]}
-          >
-            <Text style={styles.badgeText}>{getDeliveryTypeText(item.delivery_type)}</Text>
+      <ModernCard style={styles.modernPackageCard}>
+        <View style={styles.packageHeader}>
+          <View style={styles.packageInfo}>
+            <Text style={styles.packageId}>{item.kargo_id}</Text>
+            <Text style={styles.recipientName}>{item.recipient_name}</Text>
           </View>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(item.status) },
-            ]}
-          >
-            <Text style={styles.badgeText}>{getStatusText(item.status)}</Text>
+          <View style={styles.badges}>
+            <ModernBadge
+              text={getDeliveryTypeText(item.delivery_type)}
+              type={item.delivery_type}
+              size="small"
+            />
+            <ModernBadge
+              text={getStatusText(item.status)}
+              type="delivered"
+              size="small"
+              style={{ marginLeft: 8 }}
+            />
           </View>
         </View>
-      </View>
-      
-      <Text style={styles.address} numberOfLines={2}>
-        {item.address}
-      </Text>
-      
-      {item.phone && (
-        <Text style={styles.phone}>{item.phone}</Text>
-      )}
-      
-      {formatTimeWindow(item.time_window_start, item.time_window_end) && (
-        <View style={styles.timeWindow}>
-          <Ionicons name="time-outline" size={16} color="#6B7280" />
-          <Text style={styles.timeWindowText}>
-            {formatTimeWindow(item.time_window_start, item.time_window_end)}
-          </Text>
-        </View>
-      )}
+        
+        <Text style={styles.address} numberOfLines={2}>
+          {item.address}
+        </Text>
+        
+        {item.phone && (
+          <Text style={styles.phone}>{item.phone}</Text>
+        )}
+        
+        {formatTimeWindow(item.time_window_start, item.time_window_end) && (
+          <View style={styles.timeWindow}>
+            <Ionicons name="time-outline" size={16} color={AppTheme.colors.onSurfaceVariant} />
+            <Text style={styles.timeWindowText}>
+              {formatTimeWindow(item.time_window_start, item.time_window_end)}
+            </Text>
+          </View>
+        )}
+      </ModernCard>
     </TouchableOpacity>
   );
 
@@ -159,23 +158,15 @@ const PackageListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Paketler</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('QRScanner')}
-          >
-            <Ionicons name="qr-code-outline" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('AddPackage')}
-          >
-            <Ionicons name="add-outline" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#6B73FF" />
+      
+      {/* Modern Header */}
+      <ModernHeader
+        title="Paketler"
+        subtitle={`${packages.length} paket listeleniyor`}
+        rightIcon="add-outline"
+        onRightPress={() => navigation.navigate('AddPackage')}
+      />
 
       <FlatList
         data={packages}
@@ -183,11 +174,24 @@ const PackageListScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={[AppTheme.colors.primary]}
+            tintColor={AppTheme.colors.primary}
+          />
         }
         ListEmptyComponent={!loading ? EmptyState : null}
         showsVerticalScrollIndicator={false}
       />
+      
+      {/* Floating QR Scanner Button */}
+      <TouchableOpacity
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('QRScanner')}
+      >
+        <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -195,128 +199,118 @@ const PackageListScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  headerButton: {
-    padding: 8,
+    backgroundColor: AppTheme.colors.background,
   },
   listContainer: {
-    padding: 20,
+    padding: AppTheme.spacing.md,
+    paddingBottom: 100,
     flexGrow: 1,
   },
   packageCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    backgroundColor: AppTheme.colors.surface,
+    padding: AppTheme.spacing.lg,
+    borderRadius: AppTheme.spacing.lg,
+    marginBottom: AppTheme.spacing.md,
+    ...AppTheme.shadows.medium,
   },
   packageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: AppTheme.spacing.md,
   },
   packageInfo: {
     flex: 1,
   },
   packageId: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontWeight: '700',
+    color: AppTheme.colors.text.primary,
     marginBottom: 4,
   },
   recipientName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: AppTheme.colors.text.secondary,
   },
   badges: {
-    gap: 4,
+    gap: 6,
   },
   typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignSelf: 'flex-end',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignSelf: 'flex-end',
   },
   badgeText: {
     color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   address: {
     fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
+    color: AppTheme.colors.text.tertiary,
+    marginBottom: AppTheme.spacing.sm,
     lineHeight: 20,
   },
   phone: {
     fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
+    color: AppTheme.colors.text.secondary,
+    marginBottom: AppTheme.spacing.sm,
   },
   timeWindow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   timeWindowText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: AppTheme.colors.text.tertiary,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: AppTheme.spacing.xl,
     paddingTop: 60,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 16,
-    marginBottom: 8,
+    fontWeight: '700',
+    color: AppTheme.colors.text.secondary,
+    marginTop: AppTheme.spacing.lg,
+    marginBottom: AppTheme.spacing.sm,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: AppTheme.colors.text.tertiary,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: AppTheme.spacing.xl,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: AppTheme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 
