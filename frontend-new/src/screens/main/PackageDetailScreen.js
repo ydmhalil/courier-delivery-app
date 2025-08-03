@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   TextInput,
   Platform,
   Linking,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { packageService } from '../../services/packageService';
 
@@ -34,6 +36,12 @@ const PackageDetailScreen = ({ route, navigation }) => {
   useEffect(() => {
     loadPackageDetails();
   }, []);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false
+    });
+  }, [navigation]);
 
   const loadPackageDetails = async () => {
     try {
@@ -276,43 +284,65 @@ const PackageDetailScreen = ({ route, navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.packageHeader}>
-          <Text style={styles.packageId}>{packageData.kargo_id}</Text>
-          <View style={styles.badges}>
-            <View
-              style={[
-                styles.typeBadge,
-                { backgroundColor: getDeliveryTypeColor(packageData.delivery_type) },
-              ]}
-            >
-              <Text style={styles.badgeText}>{getDeliveryTypeText(packageData.delivery_type)}</Text>
-            </View>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(packageData.status) },
-              ]}
-            >
-              <Text style={styles.badgeText}>{getStatusText(packageData.status)}</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Package Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Paket Bilgileri</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#6B73FF" />
+      
+      {/* Navigation Header - Sadece en üst kısım */}
+      <LinearGradient
+        colors={['#6B73FF', '#9C27B0']}
+        style={styles.gradientHeader}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
         
-        <View style={styles.infoRow}>
-          <Ionicons name="person-outline" size={20} color="#6B7280" />
-          <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Alıcı</Text>
-            <Text style={styles.infoValue}>{packageData.recipient_name}</Text>
+        <Text style={styles.headerTitle}>Paket Detayları</Text>
+        
+        <View style={styles.headerSpacer} />
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollContent}>
+        {/* Header - PKG004 ve badge'ler burada kalacak */}
+        <View style={styles.header}>
+          <View style={styles.packageHeader}>
+            <Text style={styles.packageId}>{packageData.kargo_id}</Text>
+            <View style={styles.badges}>
+              <View
+                style={[
+                  styles.typeBadge,
+                  { backgroundColor: getDeliveryTypeColor(packageData.delivery_type) },
+                ]}
+              >
+                <Text style={styles.badgeText}>{getDeliveryTypeText(packageData.delivery_type)}</Text>
+              </View>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(packageData.status) },
+                ]}
+              >
+                <Text style={styles.badgeText}>{getStatusText(packageData.status)}</Text>
+              </View>
+            </View>
           </View>
         </View>
+
+        {/* Package Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Paket Bilgileri</Text>
+          
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={20} color="#6B7280" />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Alıcı</Text>
+              <Text style={styles.infoValue}>{packageData.recipient_name}</Text>
+            </View>
+          </View>
 
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={20} color="#6B7280" />
@@ -560,7 +590,8 @@ const PackageDetailScreen = ({ route, navigation }) => {
       </Modal>
 
       <View style={styles.bottomSpacing} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -568,6 +599,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
+  },
+  gradientHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: StatusBar.currentHeight || 40,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scrollContent: {
+    flex: 1,
   },
   header: {
     backgroundColor: 'white',

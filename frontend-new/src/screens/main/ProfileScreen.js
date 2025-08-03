@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +24,12 @@ const ProfileScreen = ({ navigation }) => {
     loadDefaultDepot();
   }, []);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false
+    });
+  }, [navigation]);
+
   const loadDefaultDepot = async () => {
     try {
       const savedDepot = await AsyncStorage.getItem('defaultDepot');
@@ -30,10 +38,10 @@ const ProfileScreen = ({ navigation }) => {
       } else {
         // Default depot location (Kadıköy)
         setDefaultDepot({
-          latitude: 40.9877,
-          longitude: 29.0283,
-          name: 'Kadıköy Kargo Merkezi',
-          address: 'Kadıköy, İstanbul'
+          latitude: 41.0020,
+          longitude: 28.5840,
+          name: 'Fatih Kargo Merkezi',
+          address: 'Fatih, İstanbul'
         });
       }
     } catch (error) {
@@ -86,12 +94,22 @@ const ProfileScreen = ({ navigation }) => {
   );
 
   return (
-    <>
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profil</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#6B73FF" />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={['#6B73FF', '#9C27B0']}
+        style={styles.gradientHeader}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Profil</Text>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollContent}>
 
       {/* User Info */}
       <View style={styles.userSection}>
@@ -220,15 +238,15 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* Bottom spacing */}
       <View style={styles.bottomSpacing} />
-    </ScrollView>
-    
-    {/* Location Selector Modal */}
-    <LocationSelectorModal
-      visible={showLocationSelector}
-      onLocationSelected={handleDepotLocationSelected}
-      onClose={() => setShowLocationSelector(false)}
-    />
-    </>
+      </ScrollView>
+      
+      {/* Location Selector Modal */}
+      <LocationSelectorModal
+        visible={showLocationSelector}
+        onLocationSelected={handleDepotLocationSelected}
+        onClose={() => setShowLocationSelector(false)}
+      />
+    </View>
   );
 };
 
@@ -237,16 +255,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  gradientHeader: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
   header: {
     padding: 20,
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
   },
   userSection: {
     backgroundColor: 'white',
