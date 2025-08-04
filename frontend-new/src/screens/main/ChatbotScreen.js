@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 import { useAuth } from '../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
@@ -36,6 +37,8 @@ const ChatbotScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechEnabled, setSpeechEnabled] = useState(true);
   const scrollViewRef = useRef(null);
   const { token } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -124,6 +127,83 @@ const ChatbotScreen = () => {
     animateTyping();
   };
 
+  // Text-to-Speech fonksiyonu
+  const speakMessage = async (text) => {
+    if (!speechEnabled || isSpeaking || !text) return;
+    
+    try {
+      setIsSpeaking(true);
+      
+      // Özel karakterleri temizle
+      const cleanText = text
+        .replace(/🚚|📦|🌤️|🗺️|📍|😔|🤖|✅|📊/g, '') // Emojileri kaldır
+        .replace(/\n/g, ' ') // Satır sonlarını boşlukla değiştir
+        .trim();
+      
+      if (cleanText.length === 0) {
+        setIsSpeaking(false);
+        return;
+      }
+
+      console.log('🔊 TTS başlatılıyor:', cleanText.substring(0, 50) + '...');
+      
+      await Speech.speak(cleanText, {
+        language: 'tr-TR',
+        pitch: 1.0,
+        rate: 0.85,
+        quality: Speech.VoiceQuality.Enhanced,
+        onDone: () => {
+          console.log('🔊 TTS tamamlandı');
+          setIsSpeaking(false);
+        },
+        onError: (error) => {
+          console.error('🔊 TTS hatası:', error);
+          setIsSpeaking(false);
+        },
+        onStopped: () => {
+          console.log('🔊 TTS durduruldu');
+          setIsSpeaking(false);
+        }
+      });
+    } catch (error) {
+      console.error('🔊 Speech error:', error);
+      setIsSpeaking(false);
+      Alert.alert('Hata', 'Sesli okuma özelliği şu anda kullanılamıyor.');
+    }
+  };
+
+  // Speech'i durdur
+  const stopSpeaking = async () => {
+    try {
+      console.log('🔇 TTS durduruluyor...');
+      await Speech.stop();
+      setIsSpeaking(false);
+    } catch (error) {
+      console.error('🔇 Stop speech error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  // Speech toggle fonksiyonu
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else {
+      setSpeechEnabled(!speechEnabled);
+      if (speechEnabled) {
+        // TTS kapatılırken konuşmayı durdur
+        stopSpeaking();
+      }
+    }
+  };
+
+  // Sesli mesaj gönderme
+  const handleVoiceMessage = (text) => {
+    if (!text.trim()) return;
+    setInputText(text);
+    setTimeout(() => sendMessage(), 100);
+  };
+
   const sendMessage = async () => {
     if (!inputText.trim()) return;
     
@@ -177,6 +257,14 @@ const ChatbotScreen = () => {
 
         setMessages(prev => [...prev, botMessage]);
         setIsTyping(false);
+        
+        // Otomatik TTS (kullanıcı tercihi varsa ve yeni mesaj)
+        if (speechEnabled && !isSpeaking) {
+          setTimeout(() => {
+            console.log('🔊 Otomatik TTS başlatılıyor...');
+            speakMessage(data.response);
+          }, 800);
+        }
       }, 1500);
 
     } catch (error) {
@@ -266,12 +354,33 @@ const ChatbotScreen = () => {
           isBot ? styles.botBubble : styles.userBubble,
           !showAvatar && isBot && styles.continueBubble
         ]}>
-          <Text style={[
-            styles.messageText,
-            isBot ? styles.botText : styles.userText
-          ]}>
-            {message.text}
-          </Text>
+          <View style={styles.messageContent}>
+            <Text style={[
+              styles.messageText,
+              isBot ? styles.botText : styles.userText
+            ]}>
+              {message.text}
+            </Text>
+            
+            {/* Bot mesajlarına speaker butonu */}
+            {isBot && (
+              <TouchableOpacity
+                style={[
+                  styles.speakerButton,
+                  isSpeaking && styles.speakerButtonActive
+                ]}
+                onPress={() => speakMessage(message.text)}
+                disabled={isSpeaking}
+                activeOpacity={0.7}
+              >
+                <Ionicons 
+                  name={isSpeaking ? "volume-high" : "volume-medium-outline"} 
+                  size={14} 
+                  color={isSpeaking ? "#EF4444" : "#6B73FF"} 
+                />
+              </TouchableOpacity>
+            )}
+          </View>
           
           {message.contextUsed && (
             <View style={styles.contextIndicator}>
@@ -363,6 +472,8 @@ const ChatbotScreen = () => {
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+        automaticallyAdjustContentInsets={false}
       >
         {messages.map((message, index) => renderMessage(message, index))}
         {renderTypingIndicator()}
@@ -425,6 +536,7 @@ const ChatbotScreen = () => {
       {/* Input Area */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         style={styles.inputContainer}
       >
         <View style={styles.inputWrapper}>
@@ -440,7 +552,29 @@ const ChatbotScreen = () => {
               returnKeyType="send"
               onSubmitEditing={sendMessage}
               blurOnSubmit={false}
+              textBreakStrategy="simple"
+              scrollEnabled={true}
             />
+            
+            {/* Speaker Toggle */}
+            <View style={styles.voiceControls}>
+              <TouchableOpacity
+                style={[
+                  styles.voiceButton,
+                  speechEnabled && styles.speechEnabledButton,
+                  isSpeaking && styles.voiceButtonActive
+                ]}
+                onPress={toggleSpeech}
+                activeOpacity={0.7}
+              >
+                <Ionicons 
+                  name={speechEnabled ? (isSpeaking ? "volume-high" : "volume-medium") : "volume-mute"} 
+                  size={18} 
+                  color={speechEnabled ? (isSpeaking ? "#EF4444" : "#3B82F6") : "#6B7280"} 
+                />
+              </TouchableOpacity>
+            </View>
+            
             <TouchableOpacity
               style={[
                 styles.sendButton,
@@ -456,9 +590,16 @@ const ChatbotScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-          <Text style={styles.inputHelper}>
-            AI asistanınız paketler, rotalar ve daha fazlası hakkında sorularınızı yanıtlayabilir
-          </Text>
+          <View style={styles.inputFooter}>
+            <Text style={styles.inputHelper}>
+              AI asistanınız paketler, rotalar ve daha fazlası hakkında sorularınızı yanıtlayabilir
+            </Text>
+            {speechEnabled && (
+              <Text style={styles.speechIndicator}>
+                🔊 Sesli yanıtlar etkin
+              </Text>
+            )}
+          </View>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -559,6 +700,7 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: width * 0.75,
+    minWidth: width * 0.5,
     padding: 15,
     borderRadius: 20,
     shadowColor: '#000',
@@ -582,18 +724,39 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     marginLeft: 45,
   },
+  messageContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  speakerButton: {
+    marginLeft: 8,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: '#F0F8FF',
+    minWidth: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speakerButtonActive: {
+    backgroundColor: '#FEE2E2',
+  },
   typingBubble: {
     paddingVertical: 20,
   },
   messageText: {
     fontSize: 16,
     lineHeight: 22,
+    flex: 1,
   },
   botText: {
     color: '#2C3E50',
+    fontWeight: '400',
   },
   userText: {
     color: '#FFFFFF',
+    fontWeight: '400',
   },
   contextIndicator: {
     flexDirection: 'row',
@@ -679,6 +842,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
+    paddingBottom: Platform.OS === 'android' ? 0 : undefined,
   },
   inputWrapper: {
     padding: 15,
@@ -694,13 +858,38 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     borderRadius: 25,
     paddingHorizontal: 18,
-    paddingVertical: 10,
-    paddingTop: 10,
+    paddingVertical: 12,
     fontSize: 16,
-    maxHeight: 80,
+    minHeight: 44,
+    maxHeight: 100,
     backgroundColor: '#F8F9FA',
-    marginRight: 12,
+    marginRight: 8,
     color: '#2C3E50',
+    textAlignVertical: 'top',
+  },
+  voiceControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  voiceButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 2,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  voiceButtonActive: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#EF4444',
+  },
+  speechEnabledButton: {
+    backgroundColor: '#EBF4FF',
+    borderColor: '#3B82F6',
   },
   sendButton: {
     width: 42,
@@ -729,6 +918,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: 'center',
     lineHeight: 14,
+  },
+  inputFooter: {
+    alignItems: 'center',
+  },
+  speechIndicator: {
+    fontSize: 10,
+    color: '#3B82F6',
+    marginTop: 4,
+    fontWeight: '500',
   },
   // Modal Styles
   modalOverlay: {
