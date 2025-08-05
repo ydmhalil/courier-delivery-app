@@ -194,33 +194,28 @@ Sistemin tanıdığı QR kod formatı:
 
 ## 🧪 Test Verileri
 
-### **Örnek QR Kodları**
+### **Örnek QR Kodu**
 
 ```json
-// Standart Teslimat
-{
-  "kargo_id": "PKT001",
-  "alici": "Mehmet Demir",
-  "adres": "Çarşı Mah. İstiklal Cad. No:25, İlkadım/Samsun", 
-  "telefon": "0532 111 22 33"
-}
 
-// Express Teslimat  
-{
-  "kargo_id": "PKT002",
-  "alici": "Ayşe Kaya",
-  "adres": "Baruthane Mah. Gazi Cad. No:45, Canik/Samsun",
-  "telefon": "0541 444 55 66"
-}
+  {
+    "kargo_id": "KRG2025080025",
+    "alici": "Ahmet Yılmaz",
+    "adres": "Oruçreis, 562. Sk. No:36, 34235 Esenler/İstanbul",
+    "telefon": "+905551234567",
+    "teslimat_turu": "express",
+    "zaman_penceresi": ["09:00", "12:00"],
+    "latitude": 41.062156796628734,
+    "longitude": 28.857212167012026
+  }
 ```
 
 ### **Test Kullanıcısı**
 ```json
 {
-  "username": "test_kurye",
-  "email": "test@kurye.com", 
-  "password": "test123",
-  "full_name": "Test Kuryesi"
+  "username": "Test Kullanıcı",
+  "email": "test@example.com", 
+  "password": "123456asD",
 }
 ```
 
@@ -298,17 +293,6 @@ Cargo2/
 4. Branch'inizi push edin (`git push origin feature/yeni-ozellik`)
 5. Pull Request oluşturun
 
-## 📄 Lisans
 
-Bu proje MIT lisansı altında lisanslanmıştır.
-
-## 📞 Destek
-
-Destek için:
-- API dokümantasyonunu kontrol edin
-- Issue oluşturun
-- Kod yorumlarını inceleyin
-
----
 
 **❤️ ile geliştirildi - Verimli kurye teslimat yönetimi için**
