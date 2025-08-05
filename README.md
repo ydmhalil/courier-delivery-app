@@ -1,4 +1,4 @@
-# 🚚 Cargo Delivery Management System
+# 🚚 Kargo Teslimat Yönetim Sistemi (Mobil Uygulama)
 
 Kurye teslimat yönetimi için geliştirilmiş kapsamlı bir mobil uygulama. AI destekli rota optimizasyonu, QR kod okuma ve gerçek zamanlı teslimat takibi özellikleri ile donatılmıştır.
 
