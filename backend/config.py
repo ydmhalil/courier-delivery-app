@@ -1,9 +1,28 @@
 import os
 from dotenv import load_dotenv
+from pathlib import Path
+
+# Get the directory where this config.py file is located
+BASE_DIR = Path(__file__).resolve().parent
 
 # Load environment variables
-load_dotenv()  # .env dosyası
-load_dotenv('.env.local')  # Yerel geliştirme için gerçek key'ler
+load_dotenv()  # Önce .env dosyasını yükle
+load_dotenv(BASE_DIR / '.env.local', override=True)  # Sonra local ile override et
+
+# Debug: Print loaded environment variables (only in debug mode)
+if os.getenv("DEBUG_MODE", "false").lower() == "true":
+    print(f"🔧 Config Debug:")
+    print(f"   BASE_DIR: {BASE_DIR}")
+    print(f"   GEMINI_API_KEY: {'✅ Set' if os.getenv('GEMINI_API_KEY') else '❌ Missing'}")
+    print(f"   GOOGLE_CLOUD_PROJECT_ID: {os.getenv('GOOGLE_CLOUD_PROJECT_ID') or '❌ Missing'}")
+    print(f"   GOOGLE_APPLICATION_CREDENTIALS: {os.getenv('GOOGLE_APPLICATION_CREDENTIALS') or '❌ Missing'}")
+    
+    # Check if credentials file exists
+    cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    if cred_path and os.path.exists(cred_path):
+        print(f"   Credentials file: ✅ Found at {cred_path}")
+    else:
+        print(f"   Credentials file: ❌ Not found at {cred_path}")
 
 class Settings:
     # Database

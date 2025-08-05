@@ -9,7 +9,6 @@ class WeatherService {
     
     console.log('🌤️ Weather Service initialized with API key from env variables');
   }
-  }
 
   // Hava durumu verilerini al (koordinatlara göre)
   async getWeatherByCoordinates(lat, lon) {
