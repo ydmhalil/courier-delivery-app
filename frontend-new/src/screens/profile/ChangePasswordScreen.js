@@ -117,7 +117,7 @@ const ChangePasswordScreen = ({ navigation }) => {
       console.log('Token exists:', !!token);
       console.log('Making request to change password...');
       
-      const response = await fetch('http://192.168.1.108:8000/auth/change-password', {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.108:8000'}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

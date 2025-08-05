@@ -1,9 +1,14 @@
+import configService from './configService';
+
 class WeatherService {
   constructor() {
     // WeatherAPI (ücretsiz 1M istek/ay)
-    // Buraya kendi API key'inizi yazın: https://www.weatherapi.com/ adresinden ücretsiz alabilirsiniz
-    this.API_KEY = '06a204ac91b24e57ae8120713250408'; 
-    this.BASE_URL = 'http://api.weatherapi.com/v1/current.json';
+    // Environment variable'dan al
+    this.API_KEY = configService.get('weatherApiKey') || process.env.EXPO_PUBLIC_WEATHER_API_KEY || '06a204ac91b24e57ae8120713250408';
+    this.BASE_URL = configService.get('weatherApiUrl') || process.env.EXPO_PUBLIC_WEATHER_API_URL || 'http://api.weatherapi.com/v1/current.json';
+    
+    console.log('🌤️ Weather Service initialized with API key from env variables');
+  }
   }
 
   // Hava durumu verilerini al (koordinatlara göre)

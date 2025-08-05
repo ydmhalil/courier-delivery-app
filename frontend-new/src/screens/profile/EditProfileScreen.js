@@ -54,7 +54,7 @@ const EditProfileScreen = ({ navigation }) => {
 
     try {
       // Call API to update user profile
-      const response = await fetch('http://192.168.1.108:8000/auth/profile', {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.108:8000'}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

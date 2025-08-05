@@ -12,12 +12,26 @@ env/
 venv/
 *.egg-info/
 
-# Environment variables
+# Environment variables - CRITICAL: NEVER COMMIT THESE!
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
+.env.production
+
+# Frontend Environment Variables
+frontend-new/.env
+frontend-new/.env.*
+!frontend-new/.env.example
+
+# Backend Environment Variables  
+backend/.env
+backend/.env.*
+!backend/.env.example
 
 # API Keys and Service Account Files
 *.key

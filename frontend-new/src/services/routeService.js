@@ -1,7 +1,8 @@
 import axios from 'axios';
+import configService from './configService';
 
-// Backend development server URL
-const API_BASE_URL = 'http://192.168.1.108:8000';
+// Environment variable'dan API URL'i al
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || configService.getApiConfig().baseURL;
 
 class RouteService {
   constructor() {

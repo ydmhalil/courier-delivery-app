@@ -46,7 +46,8 @@ const ChatbotScreen = () => {
   const typingDot2 = useRef(new Animated.Value(0.3)).current;
   const typingDot3 = useRef(new Animated.Value(0.3)).current;
 
-  const API_BASE_URL = 'http://192.168.1.108:8000';
+  // Environment variable'dan API URL'i al
+  const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.108:8000';
 
   useEffect(() => {
     console.log('🔍 ChatbotScreen - Current token:', token ? 'present' : 'missing');

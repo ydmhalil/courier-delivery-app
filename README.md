@@ -83,7 +83,12 @@ Kurye teslimat yönetimi için geliştirilmiş kapsamlı bir mobil uygulama. AI 
 
 3. **Environment dosyasını ayarla**
    ```bash
-   # .env dosyası zaten mevcut, API anahtarlarınızı ekleyin
+   # Backend için (.env dosyası zaten mevcut)
+   cp .env.example .env  # Template'i kopyala
+   # .env dosyasını düzenleyip API anahtarlarınızı ekleyin:
+   # - GEMINI_API_KEY: Google Gemini AI anahtarı
+   # - GOOGLE_CLOUD_PROJECT_ID: Google Cloud proje ID'si
+   # - GOOGLE_APPLICATION_CREDENTIALS: Service account dosya yolu
    ```
 
 4. **Veritabanını başlat**
@@ -105,14 +110,23 @@ Kurye teslimat yönetimi için geliştirilmiş kapsamlı bir mobil uygulama. AI 
    npm install
    ```
 
-3. **Geliştirme sunucusunu başlat**
+3. **Environment dosyasını ayarla**
+   ```bash
+   # Frontend için (.env.example'dan kopyala)
+   cp .env.example .env
+   # .env dosyasını düzenleyip API anahtarlarınızı ekleyin:
+   # - EXPO_PUBLIC_API_BASE_URL: Backend sunucu adresi
+   # - EXPO_PUBLIC_WEATHER_API_KEY: WeatherAPI anahtarı
+   ```
+
+4. **Geliştirme sunucusunu başlat**
    ```bash
    npm start
    # veya
    npx expo start
    ```
 
-4. **Cihazda çalıştır**
+5. **Cihazda çalıştır**
    - Expo Go uygulamasını indirin
    - QR kodu tarayın veya 'a' (Android) / 'i' (iOS) basın
 
@@ -221,8 +235,16 @@ Backend çalışırken şu adresleri ziyaret edin:
 - JWT tabanlı kimlik doğrulama
 - Bcrypt ile şifre hashleme
 - CORS yapılandırması
-- Environment variable ile API key yönetimi
+- **Environment variables ile API key yönetimi** ✅
+- Hassas bilgilerin .gitignore ile korunması
+- Production için güçlü secret key gerekliliği
 - Rate limiting (gelecek sürüm)
+
+### **Kullanılan API Servisleri:**
+- **Google Gemini AI**: AI chatbot ve doğal dil işleme
+- **WeatherAPI**: Hava durumu bilgileri
+- **Google Cloud Route Optimization**: Rota optimizasyonu
+- **Fastapi Backend**: RESTful API servisleri
 
 ## 🚀 Deployment
 
