@@ -57,8 +57,8 @@ Kurye teslimat yönetimi için geliştirilmiş kapsamlı bir mobil uygulama. AI 
 - **Authentication**: JWT tokens with bcrypt
 - **Route Optimization**: Google Cloud Route Optimization API
 - **AI Integration**: Google Gemini API
-- **Geocoding**: Google Maps Geocoding API
-- **API Documentation**: FastAPI auto-generated OpenAPI/Swagger
+- **Weather**: Weather API
+
 
 ## � Kurulum ve Çalıştırma
 
