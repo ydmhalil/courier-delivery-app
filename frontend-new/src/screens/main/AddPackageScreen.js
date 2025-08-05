@@ -33,6 +33,8 @@ const AddPackageScreen = ({ navigation }) => {
     delivery_type: 'standard',
     time_window_start: '',
     time_window_end: '',
+    latitude: '',
+    longitude: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +50,44 @@ const AddPackageScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate coordinates if provided
+    if (formData.latitude && formData.longitude) {
+      const lat = parseFloat(formData.latitude);
+      const lng = parseFloat(formData.longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        Alert.alert('Hata', 'Geçersiz koordinat formatı. Lütfen sayısal değerler girin.');
+        return;
+      }
+      
+      if (lat < -90 || lat > 90) {
+        Alert.alert('Hata', 'Enlem değeri -90 ile 90 arasında olmalıdır.');
+        return;
+      }
+      
+      if (lng < -180 || lng > 180) {
+        Alert.alert('Hata', 'Boylam değeri -180 ile 180 arasında olmalıdır.');
+        return;
+      }
+    }
+
+    // Prepare package data with proper number conversion for coordinates
+    const packageData = {
+      ...formData,
+      latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+      longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+    };
+
+    // Remove empty string values
+    Object.keys(packageData).forEach(key => {
+      if (packageData[key] === '') {
+        packageData[key] = null;
+      }
+    });
+
     setLoading(true);
     try {
-      const newPackage = await packageService.createPackage(formData);
+      const newPackage = await packageService.createPackage(packageData);
       Alert.alert(
         'Başarılı!',
         `Paket ${newPackage.kargo_id} başarıyla eklendi.`,
@@ -72,6 +109,8 @@ const AddPackageScreen = ({ navigation }) => {
                 delivery_type: 'standard',
                 time_window_start: '',
                 time_window_end: '',
+                latitude: '',
+                longitude: '',
               });
             },
           },
@@ -151,6 +190,24 @@ const AddPackageScreen = ({ navigation }) => {
               icon="call-outline"
             />
 
+            <ModernInput
+              label="Enlem (Latitude)"
+              value={formData.latitude}
+              onChangeText={(value) => handleInputChange('latitude', value)}
+              placeholder="41.0082"
+              keyboardType="numeric"
+              icon="navigate-outline"
+            />
+
+            <ModernInput
+              label="Boylam (Longitude)"
+              value={formData.longitude}
+              onChangeText={(value) => handleInputChange('longitude', value)}
+              placeholder="28.9784"
+              keyboardType="numeric"
+              icon="navigate-outline"
+            />
+
             {/* Delivery Type Picker */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Teslimat Türü *</Text>
@@ -195,6 +252,24 @@ const AddPackageScreen = ({ navigation }) => {
                 />
               </>
             )}
+
+            {/* Coordinate Info */}
+            <View style={styles.coordinateInfoBox}>
+              <Ionicons 
+                name="location-outline" 
+                size={20} 
+                color={AppTheme.colors.success} 
+              />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoTitle}>Koordinat Bilgisi:</Text>
+                <Text style={styles.infoText}>
+                  • Koordinatlar opsiyoneldir ancak harita üzerinde rota görüntülemek için gereklidir
+                </Text>
+                <Text style={styles.infoText}>
+                  • Google Maps'ten koordinat alabilir veya GPS uygulaması kullanabilirsiniz
+                </Text>
+              </View>
+            </View>
 
             {/* Delivery Type Info */}
             <View style={styles.infoBox}>
@@ -299,6 +374,15 @@ const styles = StyleSheet.create({
     marginTop: AppTheme.spacing.lg,
     borderLeftWidth: 4,
     borderLeftColor: AppTheme.colors.primary,
+  },
+  coordinateInfoBox: {
+    flexDirection: 'row',
+    backgroundColor: '#F0FDF4',
+    padding: AppTheme.spacing.lg,
+    borderRadius: AppTheme.spacing.md,
+    marginTop: AppTheme.spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: AppTheme.colors.success,
   },
   infoContent: {
     flex: 1,

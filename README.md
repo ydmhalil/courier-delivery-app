@@ -1,277 +1,292 @@
-# Courier Delivery Management System
+# 🚚 Cargo Delivery Management System
 
-A comprehensive mobile application for couriers to manage optimized cargo deliveries with AI-powered route optimization and QR code data processing.
+Kurye teslimat yönetimi için geliştirilmiş kapsamlı bir mobil uygulama. AI destekli rota optimizasyonu, QR kod okuma ve gerçek zamanlı teslimat takibi özellikleri ile donatılmıştır.
 
-## 🚀 Features
+## ✨ Özellikler
 
-- **Authentication System**: Secure JWT-based login/registration for couriers
-- **Dashboard**: Daily delivery summary with quick actions and statistics
-- **QR Code Scanner**: Instant package addition via QR code scanning
-- **Package Management**: Full CRUD operations for delivery packages
-- **AI Route Optimization**: Google OR-Tools powered route optimization with priority handling
-- **Interactive Maps**: Real-time route visualization with React Native Maps
-- **Responsive Design**: Mobile-first design with intuitive navigation
+### 🔐 **Kimlik Doğrulama Sistemi**
+- JWT tabanlı güvenli giriş/kayıt sistemi
+- Kurye hesabı yönetimi ve profil düzenleme
 
-## 🏗️ Architecture
+### 📱 **Akıllı Dashboard**
+- Günlük teslimat özeti ve istatistikler
+- Hızlı erişim butonları ve durum kartları
+- Teslimat durumu görselleştirme
 
-### Frontend (React Native + Expo)
-- **Framework**: React Native with Expo
-- **Navigation**: React Navigation (Stack + Bottom Tabs)
-- **State Management**: React Context API
-- **Styling**: Custom styles (Tailwind-inspired)
-- **Maps**: React Native Maps
-- **QR Scanner**: Expo Barcode Scanner
+### 📷 **QR Kod Tarayıcı**
+- Anlık paket ekleme ve bilgi çıkarma
+- Otomatik adres ve alıcı bilgisi tanıma
+- Kargo ID ve teslimat tipi algılama
 
-### Backend (FastAPI + Python)
-- **Framework**: FastAPI with Python
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: JWT tokens
-- **Route Optimization**: Google OR-Tools
-- **Geocoding**: Geopy library
-- **API Documentation**: Auto-generated OpenAPI/Swagger
+### 📦 **Paket Yönetimi**
+- Manuel ve QR kod ile paket ekleme
+- Teslimat durumu güncelleme (Hazır, Yolda, Teslim Edildi)
+- Paket detayları ve geçmiş görüntüleme
 
-## 📦 Installation & Setup
+### 🗺️ **Akıllı Rota Optimizasyonu**
+- Google Cloud Route Optimization API entegrasyonu
+- Mesafe ve zaman optimizasyonu
+- Öncelik bazlı teslimat sıralaması
 
-### Prerequisites
-- Node.js (v16 or higher)
-- Python 3.8+
-- PostgreSQL
+### 🎯 **Konum Servisleri**
+- İstanbul adres veritabanı entegrasyonu
+- Gerçek zamanlı harita görüntüleme
+- GPS tabanlı konum takibi
+
+### 🤖 **AI Chatbot Asistanı**
+- Gemini AI ile doğal dil işleme
+- Sesli komut desteği (Text-to-Speech)
+- Akıllı teslimat yardımcısı
+
+## 🏗️ Teknik Altyapı
+
+### 📱 **Frontend (React Native + Expo)**
+- **Framework**: React Native 0.74+ with Expo 51+
+- **Navigation**: React Navigation 6 (Stack + Bottom Tabs)
+- **State Management**: React Context API + AsyncStorage
+- **UI Components**: Custom modern design system
+- **Maps**: React Native Maps + Google Maps
+- **QR Scanner**: Expo Camera + Barcode Scanner
+- **Icons**: Ionicons 7.0+
+- **Speech**: Expo Speech API
+
+### ⚙️ **Backend (FastAPI + Python)**
+- **Framework**: FastAPI 0.100+
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **ORM**: SQLAlchemy 2.0+
+- **Authentication**: JWT tokens with bcrypt
+- **Route Optimization**: Google Cloud Route Optimization API
+- **AI Integration**: Google Gemini API
+- **Geocoding**: Google Maps Geocoding API
+- **API Documentation**: FastAPI auto-generated OpenAPI/Swagger
+
+## � Kurulum ve Çalıştırma
+
+### ✅ **Gereksinimler**
+- Node.js (v18+) 
+- Python 3.11+
+- Git
 - Expo CLI
-- Android Studio / Xcode (for device testing)
+- Android Studio / Xcode (test için)
 
-### Backend Setup
+### 🔧 **Backend Kurulumu**
 
-1. **Navigate to backend directory**
+1. **Backend dizinine git**
    ```bash
    cd backend
    ```
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate  # On Windows
-   # source venv/bin/activate  # On macOS/Linux
-   ```
-
-3. **Install dependencies**
+2. **Python bağımlılıklarını yükle**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Setup PostgreSQL Database**
+3. **Environment dosyasını ayarla**
    ```bash
-   # Create database
-   createdb courier_db
-   
-   # Create user (optional)
-   psql -c "CREATE USER courier_user WITH PASSWORD 'courier_pass';"
-   psql -c "GRANT ALL PRIVILEGES ON DATABASE courier_db TO courier_user;"
+   # .env dosyası zaten mevcut, API anahtarlarınızı ekleyin
    ```
 
-5. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env file with your database credentials
-   ```
-
-6. **Run database migrations**
-   ```bash
-   # The app will create tables automatically on startup
-   ```
-
-7. **Start the backend server**
+4. **Veritabanını başlat**
    ```bash
    python main.py
+   # Tablolar otomatik oluşturulur
    ```
-   The API will be available at `http://localhost:8000`
+   API: `http://localhost:8000`
 
-### Frontend Setup
+### 📱 **Frontend Kurulumu**
 
-1. **Navigate to frontend directory**
+1. **Frontend dizinine git**
    ```bash
-   cd frontend
+   cd frontend-new
    ```
 
-2. **Install dependencies**
+2. **Bağımlılıkları yükle**
    ```bash
    npm install
    ```
 
-3. **Start the development server**
+3. **Geliştirme sunucusunu başlat**
    ```bash
+   npm start
+   # veya
    npx expo start
    ```
 
-4. **Run on device/simulator**
-   - Install Expo Go app on your mobile device
-   - Scan the QR code from the terminal
-   - Or press 'a' for Android emulator, 'i' for iOS simulator
+4. **Cihazda çalıştır**
+   - Expo Go uygulamasını indirin
+   - QR kodu tarayın veya 'a' (Android) / 'i' (iOS) basın
 
-## 🎯 API Endpoints
+## 📡 API Endpoints
 
-### Authentication
-- `POST /auth/register` - Register new courier
-- `POST /auth/login` - Login courier
-- `GET /auth/me` - Get current user info
-- `POST /auth/reset-password` - Reset password
+### 🔐 **Kimlik Doğrulama**
+- `POST /auth/register` - Kurye kaydı
+- `POST /auth/token` - Giriş (token al)
 
-### Packages
-- `GET /api/packages` - Get all packages
-- `POST /api/packages` - Create new package
-- `POST /api/packages/qr-scan` - Create package from QR code
-- `GET /api/packages/{id}` - Get package details
-- `PUT /api/packages/{id}` - Update package
-- `DELETE /api/packages/{id}` - Delete package
+### 📦 **Paket Yönetimi** 
+- `GET /packages/` - Tüm paketleri listele
+- `POST /packages/` - Yeni paket ekle
+- `POST /packages/qr` - QR kod ile paket ekle
+- `PUT /packages/{id}` - Paket güncelle
+- `PUT /packages/{id}/status` - Durum güncelle
 
-### Routes
-- `GET /api/routes` - Get optimized route
-- `GET /api/routes/history` - Get route history
+### 🗺️ **Rota Optimizasyonu**
+- `POST /routes/optimize` - Optimize rota hesapla
+- `GET /routes/current` - Mevcut rotayı getir
 
-## 📱 QR Code Data Format
+### 🤖 **AI Chatbot**
+- `POST /chatbot/ask` - AI asistanına sor
+- `GET /chatbot/packages` - Paket durumu sor
+
+## 📱 QR Kod Formatı
+
+Sistemin tanıdığı QR kod formatı:
 
 ```json
 {
   "kargo_id": "PKT123456",
-  "alici": "Ahmet Yılmaz",
+  "alici": "Ahmet Yılmaz", 
   "adres": "İlkadım Mah. Atatürk Cad. No:15, Samsun",
-  "telefon": "0555 123 45 67",
-  "teslimat_turu": "express",
-  "zaman_penceresi": ["10:00", "18:00"]
+  "telefon": "0555 123 45 67"
 }
 ```
 
-## 🤖 AI Route Optimization
+## 🗺️ Rota Optimizasyonu
 
-The system uses Google OR-Tools for intelligent route optimization with:
+### **Google Cloud Route Optimization**
+- Mesafe ve süre optimizasyonu
+- Gerçek trafik verileri
+- 100+ paket kapasitesi
+- Coğrafi kısıtlamalar desteği
 
-- **Priority Handling**: Express > Scheduled > Standard deliveries
-- **Time Windows**: Respect scheduled delivery time constraints
-- **Distance Optimization**: Minimize total travel distance
-- **Real-time Adaptation**: Dynamic route updates based on package status
+### **Optimizasyon Kriterleri**
+- En kısa mesafe rotası
+- Trafik yoğunluğu hesaplaması  
+- Teslimat öncelik sırası
+- Zaman penceresi optimizasyonu
 
-### Priority Logic
-1. **Express**: High penalty if not delivered (priority 1)
-2. **Scheduled**: Must be delivered within time window (priority 2)
-3. **Standard**: Flexible delivery timing (priority 3)
+## 🎨 Kullanıcı Arayüzü
 
-## 🎨 UI/UX Design
+### **Renk Sistemi**
+- **Hazır**: Mavi (#3B82F6) - Teslimat bekleyen
+- **Yolda**: Turuncu (#F97316) - Teslimat yolunda  
+- **Teslim Edildi**: Yeşil (#10B981) - Başarıyla teslim
 
-- **Color Coding**:
-  - Express: Red (#EF4444)
-  - Scheduled: Amber (#F59E0B)
-  - Standard: Green (#10B981)
+### **Navigation**
+- **Dashboard**: Ana ekran, günlük özet
+- **Paketler**: Paket listesi ve yönetimi
+- **QR Tarayıcı**: Kamera ile paket ekleme
+- **Rotalar**: Optimize edilmiş teslimat rotaları
+- **Chatbot**: AI asistan desteği
 
-- **Navigation**: Bottom tab navigation with intuitive icons
-- **Maps**: Interactive delivery route visualization
-- **Responsive**: Mobile-optimized interface
+## 🧪 Test Verileri
 
-## 🔧 Development
-
-### Adding New Features
-
-1. **Backend**: Add new endpoints in `routers/`
-2. **Frontend**: Create new screens in `src/screens/`
-3. **Services**: Add API calls in `src/services/`
-4. **Navigation**: Update navigation in `src/navigation/`
-
-### Database Schema
-
-- **Couriers**: User authentication and profile
-- **Packages**: Delivery package information
-- **Routes**: Optimized delivery routes
-
-## 🧪 Testing
-
-### Sample QR Codes for Testing
+### **Örnek QR Kodları**
 
 ```json
-// Express Delivery
+// Standart Teslimat
 {
   "kargo_id": "PKT001",
-  "alici": "John Doe",
-  "adres": "123 Main St, New York, NY",
-  "telefon": "+1-555-0123",
-  "teslimat_turu": "express",
-  "zaman_penceresi": null
+  "alici": "Mehmet Demir",
+  "adres": "Çarşı Mah. İstiklal Cad. No:25, İlkadım/Samsun", 
+  "telefon": "0532 111 22 33"
 }
 
-// Scheduled Delivery
+// Express Teslimat  
 {
   "kargo_id": "PKT002",
-  "alici": "Jane Smith",
-  "adres": "456 Oak Ave, Los Angeles, CA",
-  "telefon": "+1-555-0456",
-  "teslimat_turu": "scheduled",
-  "zaman_penceresi": ["14:00", "16:00"]
-}
-
-// Standard Delivery
-{
-  "kargo_id": "PKT003",
-  "alici": "Bob Johnson",
-  "adres": "789 Pine Rd, Chicago, IL",
-  "telefon": "+1-555-0789",
-  "teslimat_turu": "standard",
-  "zaman_penceresi": null
+  "alici": "Ayşe Kaya",
+  "adres": "Baruthane Mah. Gazi Cad. No:45, Canik/Samsun",
+  "telefon": "0541 444 55 66"
 }
 ```
 
-### Test User Credentials
-
-Create a test user by registering through the app or use the API:
-
+### **Test Kullanıcısı**
 ```json
 {
-  "email": "test@courier.com",
-  "password": "password123",
-  "full_name": "Test Courier",
-  "phone": "+1-555-0000"
+  "username": "test_kurye",
+  "email": "test@kurye.com", 
+  "password": "test123",
+  "full_name": "Test Kuryesi"
 }
 ```
 
-## 📚 API Documentation
+## 📚 API Dokümantasyonu
 
-Once the backend is running, visit:
+Backend çalışırken şu adresleri ziyaret edin:
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
 
-## 🔒 Security
+## 🔒 Güvenlik
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- CORS configuration for cross-origin requests
-- Input validation and sanitization
+- JWT tabanlı kimlik doğrulama
+- Bcrypt ile şifre hashleme
+- CORS yapılandırması
+- Environment variable ile API key yönetimi
+- Rate limiting (gelecek sürüm)
 
 ## 🚀 Deployment
 
-### Backend Deployment
-1. Configure production database
-2. Set environment variables
-3. Deploy to cloud provider (AWS, Google Cloud, etc.)
+### **Backend**
+```bash
+# Production için environment variables ayarlayın
+export JWT_SECRET_KEY="your-production-secret"
+export DATABASE_URL="postgresql://..."
+export GOOGLE_CLOUD_PROJECT_ID="your-project"
 
-### Frontend Deployment
-1. Build for production: `expo build`
-2. Deploy to app stores or web
+# Server'ı başlatın
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
-## 🤝 Contributing
+### **Frontend** 
+```bash
+# Production build
+expo build:android
+expo build:ios
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Add tests
-5. Submit pull request
+# Web deployment
+expo export:web
+```
 
-## 📄 License
+## 📂 Proje Yapısı
 
-This project is licensed under the MIT License.
+```
+Cargo2/
+├── backend/                 # FastAPI Backend
+│   ├── models/             # Database modelleri
+│   ├── routers/            # API endpoint'leri  
+│   ├── services/           # İş mantığı servisleri
+│   ├── schemas/            # Pydantic şemaları
+│   └── main.py             # Ana uygulama
+├── frontend-new/           # React Native Frontend
+│   ├── src/
+│   │   ├── screens/        # Uygulama ekranları
+│   │   ├── components/     # Yeniden kullanılabilir bileşenler
+│   │   ├── services/       # API servisleri
+│   │   ├── navigation/     # Navigasyon yapısı
+│   │   └── context/        # Context API
+│   └── App.js              # Ana component
+└── README.md               # Bu dosya
+```
 
-## 🆘 Support
+## 🤝 Katkıda Bulunma
 
-For support and questions:
-- Check the API documentation
-- Review the code comments
-- Create an issue in the repository
+1. Repository'yi fork edin
+2. Feature branch oluşturun (`git checkout -b feature/yeni-ozellik`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Yeni özellik eklendi'`)
+4. Branch'inizi push edin (`git push origin feature/yeni-ozellik`)
+5. Pull Request oluşturun
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+## 📞 Destek
+
+Destek için:
+- API dokümantasyonunu kontrol edin
+- Issue oluşturun
+- Kod yorumlarını inceleyin
 
 ---
 
-**Built with ❤️ for efficient courier delivery management**
+**❤️ ile geliştirildi - Verimli kurye teslimat yönetimi için**

@@ -17,6 +17,7 @@ import { packageService } from '../../services/packageService';
 import { routeService } from '../../services/routeService';
 import { errorService } from '../../services/errorService';
 import { configService } from '../../services/configService';
+import { weatherService } from '../../services/weatherService';
 import AppTheme from '../../theme/AppTheme';
 import { ModernHeader, ModernCard, ModernButton, ModernBadge } from '../../components/ModernComponents';
 
@@ -40,6 +41,8 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   
   const shouldLog = configService.shouldLog();
 
@@ -140,7 +143,71 @@ const DashboardScreen = ({ navigation }) => {
   const onRefresh = () => {
     setRefreshing(true);
     loadDashboardData(true);
+    loadWeatherData();
   };
+
+  // Hava durumu verilerini yükle
+  const loadWeatherData = async () => {
+    try {
+      setWeatherLoading(true);
+      
+      // Kullanıcının paketlerinden en çok kullanılan şehri bul
+      let targetCity = 'Istanbul'; // Varsayılan
+      
+      if (packages && packages.length > 0) {
+        // Paket adreslerinden şehirleri çıkart
+        const cities = packages
+          .map(pkg => {
+            if (pkg.address) {
+              // Adres formatı: "Mahalle, İlçe, Şehir" şeklinde olabilir
+              const addressParts = pkg.address.split(',');
+              if (addressParts.length >= 2) {
+                // Son parça genellikle şehir
+                return addressParts[addressParts.length - 1].trim();
+              }
+              // Adres tek parça ise İstanbul varsay
+              return pkg.address.includes('İstanbul') ? 'İstanbul' : 'Istanbul';
+            }
+            return null;
+          })
+          .filter(city => city !== null);
+
+        if (cities.length > 0) {
+          // En çok geçen şehri bul
+          const cityCount = {};
+          cities.forEach(city => {
+            cityCount[city] = (cityCount[city] || 0) + 1;
+          });
+          
+          const mostCommonCity = Object.keys(cityCount).reduce((a, b) => 
+            cityCount[a] > cityCount[b] ? a : b
+          );
+          
+          targetCity = mostCommonCity;
+          console.log('🌤️ En çok kullanılan şehir tespit edildi:', targetCity);
+        }
+      }
+      
+      // Belirlenen şehir için hava durumu al
+      const weatherData = await weatherService.getDepotWeather(null, targetCity);
+      setWeather(weatherData);
+      
+    } catch (error) {
+      console.warn('Weather loading failed:', error);
+      // Varsayılan hava durumu
+      const defaultWeather = weatherService.getDefaultWeather();
+      setWeather(defaultWeather);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  // Component mount edildiğinde hava durumunu yükle
+  useEffect(() => {
+    if (!authLoading) {
+      loadWeatherData();
+    }
+  }, [authLoading, packages]); // packages değiştiğinde hava durumunu güncelle
 
   const getDeliveryTypeColor = (type) => {
     switch (type) {
@@ -293,8 +360,17 @@ const DashboardScreen = ({ navigation }) => {
       <ModernHeader
         title="Ana Sayfa"
         subtitle={`Merhaba, ${user?.full_name || 'Kurye'}`}
-        rightIcon="notifications-outline"
-        onRightPress={() => {/* Bildirimler */}}
+        rightIcon={weather?.icon || 'sunny'}
+        rightIconColor={weather ? weatherService.getWeatherColor(weather.condition) : '#FFD700'}
+        onRightPress={() => {
+          if (weather) {
+            Alert.alert(
+              `${weather.city} Hava Durumu`,
+              `🌡️ Sıcaklık: ${weather.temperature}°C\n📝 Durum: ${weather.description}\n💨 Rüzgar: ${weather.windSpeed} m/s\n💧 Nem: %${weather.humidity}`,
+              [{ text: 'Tamam' }]
+            );
+          }
+        }}
       />
 
       <ScrollView

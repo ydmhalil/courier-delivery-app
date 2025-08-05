@@ -19,10 +19,17 @@ venv/
 .env.test.local
 .env.production.local
 
+# API Keys and Service Account Files
+*.key
+*.pem
+kargo-rota-opt-*.json
+config/secrets.js
+
 # Database
 *.db
 *.sqlite
 *.sqlite3
+courier.db
 
 # Logs
 logs/
@@ -33,7 +40,9 @@ yarn-error.log*
 
 # Expo
 .expo/
+.expo-shared/
 dist/
+web-build/
 
 # OS generated files
 .DS_Store
@@ -53,3 +62,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Build outputs
+build/
+dist/
+coverage/

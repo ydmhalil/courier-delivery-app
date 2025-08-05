@@ -384,7 +384,7 @@ const ChatbotScreen = () => {
           
           {message.contextUsed && (
             <View style={styles.contextIndicator}>
-              <Ionicons name="database-outline" size={12} color="#6B73FF" />
+              <Ionicons name="server-outline" size={12} color="#6B73FF" />
               <Text style={styles.contextText}>📊 Gerçek verileriniz kullanıldı</Text>
             </View>
           )}
@@ -436,7 +436,11 @@ const ChatbotScreen = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#6B73FF" />
       
       {/* Header */}
@@ -534,11 +538,7 @@ const ChatbotScreen = () => {
       </Modal>
 
       {/* Input Area */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        style={styles.inputContainer}
-      >
+      <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
           <View style={styles.inputRow}>
             <TextInput
@@ -549,11 +549,14 @@ const ChatbotScreen = () => {
               placeholderTextColor="#A0A0A0"
               multiline={true}
               maxLength={500}
-              returnKeyType="send"
-              onSubmitEditing={sendMessage}
+              returnKeyType="default"
+              autoFocus={false}
               blurOnSubmit={false}
+              keyboardType="default"
               textBreakStrategy="simple"
               scrollEnabled={true}
+              showSoftInputOnFocus={true}
+              editable={true}
             />
             
             {/* Speaker Toggle */}
@@ -601,8 +604,8 @@ const ChatbotScreen = () => {
             )}
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 

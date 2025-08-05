@@ -10,6 +10,7 @@ export const ModernHeader = ({
   subtitle, 
   leftIcon, 
   rightIcon, 
+  rightIconColor = "#FFFFFF",
   onLeftPress, 
   onRightPress,
   gradient = AppTheme.gradients.primary 
@@ -35,7 +36,7 @@ export const ModernHeader = ({
         </View>
         {rightIcon && (
           <TouchableOpacity style={styles.headerButton} onPress={onRightPress}>
-            <Ionicons name={rightIcon} size={24} color="#FFFFFF" />
+            <Ionicons name={rightIcon} size={24} color={rightIconColor} />
           </TouchableOpacity>
         )}
       </View>
